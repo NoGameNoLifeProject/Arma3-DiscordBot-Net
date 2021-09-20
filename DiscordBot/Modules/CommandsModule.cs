@@ -119,9 +119,17 @@ namespace DiscordBot.Modules
 
         [Command("roll")]
         [RequireContext(ContextType.Guild)]
-        public async Task Roll(params int[] objects)
+        public async Task Roll(params string[] objects)
         {
-            await ReplyAsync($"{Context.User.Username} {TryAndRoll.Roll}");
+            try
+            {
+                int min = int.Parse(objects[0]);
+                int max = int.Parse(objects[1]);
+                await ReplyAsync($"{Context.User.Username} {TryAndRoll.Roll(min, max, true)}");
+            } catch (Exception ex) {
+                Console.WriteLine("Roll command error: " + ex.Message);
+                await ReplyAsync($"{Context.User.Username} {TryAndRoll.Roll()}");
+            }
         }
     }
 }

@@ -18,7 +18,7 @@ namespace DiscordBot.Services
         {
             try
             {
-                var resp = await _http.GetAsync("https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\\gameaddr\\" + Program.Configuration.ServerAdress + ":2302&key=" + Program.Configuration.SteamAuthToken);
+                var resp = await _http.GetAsync(@"https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\gameaddr\" + Program.Configuration.ServerAdress + ":2302&key=" + Program.Configuration.SteamAuthToken);
                 var content = await resp.Content.ReadAsStringAsync();
                 var json = JsonConvert.DeserializeObject<Dictionary<string, Response>>(content);
                 return json["response"].servers[0];

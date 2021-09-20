@@ -15,10 +15,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="credentials.example.json" />
     <None Remove="credentials.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="credentials.example.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
     <EmbeddedResource Include="credentials.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
