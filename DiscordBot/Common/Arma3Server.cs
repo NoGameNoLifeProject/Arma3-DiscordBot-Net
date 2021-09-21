@@ -1,5 +1,8 @@
 ﻿using DiscordBot.Configs;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,7 +12,10 @@ namespace DiscordBot.Common
 {
     public class Arma3Server
     {
+        private static Arma3Config _config {  get; set; }
         public static Process Arma3Process { get; set; }
+
+        public static Arma3Config Config { get => _config ??= BuildConfig(); }
 
         public static bool StartServer()
         {
@@ -18,8 +24,15 @@ namespace DiscordBot.Common
             try
             {
                 Arma3Process.StartInfo.UseShellExecute = true;
-                Arma3Process.StartInfo.FileName = Program.Configuration.A3serverPath + "\\" + Program.Configuration.A3serverExecutable;
+                Arma3Process.StartInfo.FileName = Config.A3serverPath + "\\arma3server_x64.exe";
                 Arma3Process.StartInfo.CreateNoWindow = false;
+                Arma3Process.StartInfo.Arguments = $"" +
+                    $"-profiles={Config.A3ProfilesPath} " +
+                    $"-cfg={Config.A3NetworkConfigName} " +
+                    $"-config={Config.A3ServerConfigName} " +
+                    $"-mod={string.Join(";", Config.Mods.Keys)} " +
+                    $"-servermod={string.Join(";", Config.ServerMods.Keys)} " +
+                    $"-world=empty -autoInit -bepath=BattlEye";
                 Arma3Process.Start();
                 return true;
             } catch (Exception e)
@@ -163,6 +176,15 @@ namespace DiscordBot.Common
             if (move == false) return;
 
             SetMS(ms);
+        }
+
+        private static Arma3Config BuildConfig()
+        {
+            var builder = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", true, true)
+                .Build();
+
+            return builder.GetSection("Arma3Config").Get<Arma3Config>();
         }
     }
 }
