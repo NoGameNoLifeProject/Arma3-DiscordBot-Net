@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,8 +21,8 @@ namespace DiscordBot.Configs
 
         public string A3serverBranch { get; set; }
 
-        public Dictionary<string, long?> Mods { get; set; }
+        public Dictionary<string, long> Mods { get; set; }
 
-        public Dictionary<string, long?> ServerMods { get; set; }
+        public Dictionary<string, long> ServerMods { get; set; }
     }
 }
