@@ -30,8 +30,8 @@ namespace DiscordBot.Common
                     $"-profiles={Config.A3ProfilesPath} " +
                     $"-cfg={Config.A3NetworkConfigName} " +
                     $"-config={Config.A3ServerConfigName} " +
-                    $"-mod={string.Join(";", Config.Mods.Keys.ToList())} " +
-                    $"-servermod={string.Join(";", Config.ServerMods.Keys.ToList())} " +
+                    $"-mod={string.Join(";", Config.Mods.Keys.ToList().Select(x => Config.A3ModsPath + x))} " +
+                    $"-servermod={string.Join(";", Config.ServerMods.Keys.ToList().Select(x => Config.A3ModsPath + x))} " +
                     $"-world=empty -autoInit -bepath=BattlEye";
                 Console.WriteLine("Starting Arma 3 server: " + Arma3Process.StartInfo.Arguments);
                 Arma3Process.Start();
