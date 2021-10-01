@@ -31,7 +31,7 @@ namespace DiscordBot
             maxplayers = server.max_players;
             if (server.addr == "0.0.0.0")
             {
-                await client.SetGameAsync($"Order 66 on {server.map}");
+                await client.SetGameAsync(Configuration.BotStatusServerDisabled);
             }
             else
             {

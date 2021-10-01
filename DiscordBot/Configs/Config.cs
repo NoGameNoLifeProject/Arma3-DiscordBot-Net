@@ -13,6 +13,7 @@ namespace DiscordBot.Configs
         /// </summary>
         public string BotToken { get; set; }
         public string BotStatusGame { get; set; }
+        public string BotStatusServerDisabled { get; set; }
         public int BotStatusUpdateInterval { get; set; }
         public int GoogleSheetsUpdateInterval { get; set; }
         public string A3serverPath { get; set; }
