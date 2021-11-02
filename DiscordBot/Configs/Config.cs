@@ -23,12 +23,12 @@ namespace DiscordBot.Configs
         /// <summary>
         ///  Discord role id with full access to the bot commands
         /// </summary>
-        public ulong DiscordManageRoleId { get; set; }
+        public List<ulong> DiscordManageRoleId { get; set; }
 
         /// <summary>
         ///  Discord role id with access to restart command
         /// </summary>
-        public ulong DiscordServerRestartRoleId { get; set; }
+        public List<ulong> DiscordServerRestartRoleId { get; set; }
 
         /// <summary>
         ///  Do the admin rights give full access to the bot commands

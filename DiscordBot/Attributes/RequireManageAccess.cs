@@ -26,7 +26,7 @@ namespace DiscordBot.Attributes
 
             foreach (var role in user.Roles)
             {
-                if (role.Id == Program.Configuration.DiscordManageRoleId)
+                if (Program.Configuration.DiscordManageRoleId.Contains(role.Id))
                 {
                     return PreconditionResult.FromSuccess();
                 }

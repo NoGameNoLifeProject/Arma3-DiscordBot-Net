@@ -33,7 +33,7 @@ namespace DiscordBotTest.Common
 
             foreach (var role in user.Roles)
             {
-                if (role.Id == Program.Configuration.DiscordManageRoleId || (restart && role.Id == Program.Configuration.DiscordServerRestartRoleId))
+                if (Program.Configuration.DiscordManageRoleId.Contains(role.Id) || (restart && Program.Configuration.DiscordServerRestartRoleId.Contains(role.Id)))
                 {
                     return true;
                 }
