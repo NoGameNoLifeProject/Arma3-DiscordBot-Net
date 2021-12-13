@@ -51,7 +51,7 @@ namespace DiscordBot.Services
             if (result.IsSuccess)
                 return;
 
-            await context.Channel.SendMessageAsync($"error: {result}");
+            await context.Channel.SendMessageAsync($"Ошибка: {result.ErrorReason}");
         }
     }
 }

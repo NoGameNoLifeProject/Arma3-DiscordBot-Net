@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Management;
 
 namespace DiscordBot.Common
 {
@@ -16,6 +17,9 @@ namespace DiscordBot.Common
         public static Process Arma3Process { get; set; }
 
         public static Arma3Config Config { get => _config ??= BuildConfig(); }
+
+        private static string _curProcessOwner { get; set; }
+        private static string CurProcessOwner { get => _curProcessOwner ??= GetProcessOwner(Process.GetCurrentProcess().Id); }
 
         public static bool StartServer()
         {
@@ -32,7 +36,8 @@ namespace DiscordBot.Common
                     $"-config={Config.A3ServerConfigName} " +
                     $"-mod={string.Join(";", Config.Mods.Keys.ToList().Select(x => Config.A3ModsPath + x))} " +
                     $"-servermod={string.Join(";", Config.ServerMods.Keys.ToList().Select(x => Config.A3ModsPath + x))} " +
-                    $"-world=empty -autoInit -bepath=BattlEye";
+                    $"-world=empty -autoInit -bepath=BattlEye " +
+                    $"-port=" + Program.Configuration.ServerGamePort;
                 Console.WriteLine("Starting Arma 3 server: " + Arma3Process.StartInfo.Arguments);
                 Arma3Process.Start();
                 return true;
@@ -51,7 +56,11 @@ namespace DiscordBot.Common
                 Process[] arma3process = Process.GetProcessesByName("arma3server_x64");
                 foreach (Process process in arma3process)
                 {
-                    process.Kill();
+                    var pOwner = GetProcessOwner(process.Id);
+                    if (pOwner != null && pOwner == CurProcessOwner)
+                    {
+                        process.Kill();
+                    }
                 }
                 return true;
             }
@@ -177,6 +186,25 @@ namespace DiscordBot.Common
             if (move == false) return;
 
             SetMS(ms);
+        }
+
+        private static string GetProcessOwner(int processId)
+        {
+            string query = "Select * From Win32_Process Where ProcessID = " + processId;
+            ManagementObjectSearcher searcher = new(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+            foreach (ManagementObject obj in processList)
+            {
+                string[] argList = new string[] { string.Empty, string.Empty };
+                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                if (returnVal == 0)
+                {
+                    return argList[1] + "\\" + argList[0];
+                }
+            }
+
+            return "NO OWNER";
         }
 
         private static Arma3Config BuildConfig()

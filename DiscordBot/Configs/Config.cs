@@ -17,7 +17,6 @@ namespace DiscordBot.Configs
         public int BotStatusUpdateInterval { get; set; }
         public int GoogleSheetsUpdateInterval { get; set; }
         public string A3serverPath { get; set; }
-        public string A3serverExecutable { get; set; }
         public string A3ServerConfigName { get; set; }
 
         /// <summary>
@@ -38,6 +37,14 @@ namespace DiscordBot.Configs
         ///     Arma 3 server ip
         /// </summary>
         public string ServerAdress { get; set; }
+        /// <summary>
+        ///     Arma 3 server game port
+        /// </summary>
+        public long ServerGamePort { get; set; }
+        /// <summary>
+        ///     Arma 3 server query port
+        /// </summary>
+        public long ServerQueryPort { get; set; }
 
         /// <summary>
         ///     Steam api key https://steamcommunity.com/dev/apikey
