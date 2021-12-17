@@ -52,6 +52,7 @@ namespace DiscordBot.Common
         {
             try
             {
+                WebSocketClient.SocketClose();
                 if (Arma3Process != null) { Arma3Process.Kill(); }
                 Process[] arma3process = Process.GetProcessesByName("arma3server_x64");
                 foreach (Process process in arma3process)

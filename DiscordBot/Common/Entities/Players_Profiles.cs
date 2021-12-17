@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DiscordBot.Common.Entities
+{
+    public class Players_Profiles
+    {
+        public long ID { get; set; }
+
+        public long SteamID { get; set; }
+
+        public long ProfileID { get; set; }
+
+        public string ProfileName { get; set; }
+
+        public string Inventory { get; set; }
+    }
+}

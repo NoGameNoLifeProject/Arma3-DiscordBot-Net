@@ -42,7 +42,7 @@ namespace DiscordBot
         public async Task MainAsync()
         {
             var builder = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", true, true)
+                .AddJsonFile("appsettings.json", false, true)
                 .Build();
 
             Configuration = builder.GetSection("Config").Get<Config>();
@@ -76,7 +76,7 @@ namespace DiscordBot
         {
             var slashCommands = new SlashCommands(Client);
             await Task.Run(() => slashCommands.RegisterCommands() );
-            Client.InteractionCreated += slashCommands.Client_InteractionCreated;
+            Client.SlashCommandExecuted += slashCommands.SlashCommandHandler;
         }
 
         private Task LogAsync(LogMessage log)
