@@ -1,0 +1,62 @@
+{
+  "Config": {
+    //Discord api bot token
+    "BotToken": "NTA0NjczODI3MDA4MTUxNTcz.W9CMIA.De6eU-rv27sFBffIo06CXDkDt3c",
+
+    "BotStatusGame": "Server Online: ",
+    "BotStatusUpdateInterval": 60,
+    "BotStatusServerDisabled": "Сервер живой? Да не, хуйня какая-то",
+
+    //Arma 3 server files paths
+    "A3serverPath": "C:\\A3Master",
+    "A3ServerConfigName": "server_config.cfg",
+
+    //Commands Access
+    "DiscordManageRoleId": [ 887392720925126701 ], //Discord role id with full access to the bot commands
+    "DiscordServerRestartRoleId": [ 887083032568299561 ], //Discord role id with access to restart command
+    "DiscordAdminRoleAccess": true, //Do the admin rights give full access to the bot commands
+
+    //Arma 3 server ip
+    "ServerAdress": "212.22.93.204",
+
+    //Steam api key https://steamcommunity.com/dev/apikey
+    "SteamAuthToken": "352F6C0935C6F42106F3E1E34B358613",
+
+    // Not used
+    "GoogleServiceMail": "example@example.iam.gserviceaccount.com",
+    "GoogleSheetId": "",
+    "GoogleSheetsUpdateInterval": 300
+  },
+  "Arma3Config": {
+    "A3serverPath": "C:\\A3Master",
+    "A3ProfilesPath": "C:\\A3Master\\profiles",
+    "A3ModsPath": "mods\\",
+    "A3KeysPath": "keys\\",
+    "SteamCmdPath": "C:\\SteamCMD",
+    "SteamContentPath": "C:\\A3Master\\steamapps\\workshop\\content",
+    "A3ServerConfigName": "config_server.cfg",
+    "A3NetworkConfigName": "config_network.cfg",
+    "A3serverBranch": "233780 -beta",
+    "Mods": { // "@modName": Workshop Id or 0
+      "mods\\@cbaa3": 0,
+      "mods\\@ace": 0
+    },
+    "ServerMods": {
+      "mods\\@infistar_a3": 0
+    },
+    "SteamUserLogin": "example",
+    "SteamUserPass": "example"
+  },
+  "MySQL": {
+    "Server": "212.22.93.204",
+    "Database": "testserver",
+    "User": "test",
+    "Password": "2Py-W*/*pej9P1Zr"
+  },
+  "WebSocket": {
+    "Server": "127.0.0.1",
+    "Port": 4649,
+    "User": "Web",
+    "Password": "ASEljqwenu1263oasd"
+  }
+}

@@ -579,6 +579,7 @@ namespace DiscordBotTest.Common
                 if (Program.Configuration.DiscordManageRoleId.Contains(role.Id))
                 {
                     manage = true;
+                    break;
                 }
             }
 
@@ -596,21 +597,23 @@ namespace DiscordBotTest.Common
             if (user.Id == ApplicationOwnerID)
                 manage = true;
 
+            var exc = new Exception("Недостаточно прав для использования команды");
+
             switch (commandName)
             {
                 case "zeus":
-                    return manage;
+                    return manage ? true : throw exc;
                 case "infistar":
-                    return manage;
+                    return manage ? true : throw exc;
                 case "ban":
-                    return manage || user.GuildPermissions.BanMembers;
+                    return (manage || user.GuildPermissions.BanMembers) ? true : throw exc;
                 case "kick":
-                    return manage || user.GuildPermissions.KickMembers;
+                    return (manage || user.GuildPermissions.KickMembers) ? true : throw exc;
                 case "unban":
-                    return manage || user.GuildPermissions.BanMembers;
+                    return (manage || user.GuildPermissions.BanMembers) ? true : throw exc;
             }
 
-            throw new Exception("Недостаточно прав для использования команды");
+            throw exc;
         }
     }
 }
