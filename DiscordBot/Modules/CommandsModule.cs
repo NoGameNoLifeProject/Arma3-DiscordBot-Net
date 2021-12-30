@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using DiscordBot.Attributes;
 using DiscordBot.Common;
 using DiscordBot.Configs;
+using DiscordBot.Modules.Commands;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,7 +22,7 @@ namespace DiscordBot.Modules
         [RequireRestartAccess(ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task RestartServer(params string[] objects)
         {
-            string res = Arma3Server.RestartServer();
+            string res = ServerCommands.RestartServer(Context.User as SocketGuildUser);
             await ReplyAsync(res);
         }
 
@@ -31,15 +32,8 @@ namespace DiscordBot.Modules
         [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task StartServer(params string[] objects)
         {
-            bool res = Arma3Server.StartServer();
-            if (res)
-            {
-                await ReplyAsync("Сервер успешно запущен");
-            }
-            else
-            {
-                await ReplyAsync("Ошибка при попытке запуска сервера");
-            }
+            string res = ServerCommands.StartServer(Context.User as SocketGuildUser);
+            await ReplyAsync(res);
         }
 
         [Command("stop")]
@@ -48,15 +42,8 @@ namespace DiscordBot.Modules
         [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task StopServer(params string[] objects)
         {
-            bool res = Arma3Server.StopServer();
-            if (res)
-            {
-                await ReplyAsync("Сервер успешно остановлен");
-            }
-            else
-            {
-                await ReplyAsync("Ошибка при попытке остановки сервера");
-            }
+            string res = ServerCommands.StopServer(Context.User as SocketGuildUser);
+            await ReplyAsync(res);
         }
 
         [Command("msupload")]
@@ -66,23 +53,8 @@ namespace DiscordBot.Modules
         public async Task MsUpload(params string[] objects)
         {
             var attachments = Context.Message.Attachments;
-            using (var client = new HttpClient())
-            {
-                Directory.CreateDirectory("Downloads");
-                Arma3Server.ClearDownloadFolder();
-                var filename = attachments.First().Filename;
-                var response = await client.GetAsync(attachments.First().Url);
-                using (var stream = new FileStream($"Downloads\\{filename}", FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    await response.Content.CopyToAsync(stream);
-                }
-            }
-            if (objects.Length > 0 && objects[0] == "restart")
-            {
-                await ReplyAsync("Миссия успешно загружена, сервер будет перезапущен");
-                await RestartServer();
-            }
-            await ReplyAsync("Миссия успешно загружена и будет установлена при следующем запуске");
+            string res = await ServerCommands.MsUpload(Context.User as SocketGuildUser, attachments, objects.ElementAtOrDefault(0) == "restart" ? true : false);
+            await ReplyAsync(res);
         }
 
         [Command("setms")]
@@ -91,11 +63,8 @@ namespace DiscordBot.Modules
         [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task SetMS(params string[] objects)
         {
-            if (String.IsNullOrEmpty(objects[0]))
-                await ReplyAsync("Необходимо указать название миссии");
-
-            var rec = Arma3Server.SetMS(objects[0]);
-            await ReplyAsync("Миссия " + (rec ? "успешно" : "не") + " изменена");
+            string res = ServerCommands.SetMS(Context.User as SocketGuildUser, objects.ElementAtOrDefault(0));
+            await ReplyAsync(res);
         }
 
         [Command("mplist")]
@@ -104,33 +73,24 @@ namespace DiscordBot.Modules
         [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task MPList(params string[] objects)
         {
-            var list = Arma3Server.GetAvailableMissions();
-            List<string> newlist = new List<string>();
-            list.ForEach(m => newlist.Add(Path.GetFileNameWithoutExtension(m)));
-
-            await ReplyAsync("Доступные миссии:\n" + String.Join("\n", newlist));
+            string res = ServerCommands.MsList(Context.User as SocketGuildUser);
+            await ReplyAsync(res);
         }
 
         [Command("try")]
         [RequireContext(ContextType.Guild)]
         public async Task Try(params string[] objects)
         {
-            await ReplyAsync($"{Context.User.Username}: {TryAndRoll.Try(string.Join(' ', objects))}");
+            string res = CommonCommands.Try(Context.User as SocketGuildUser, string.Join(' ', objects));
+            await ReplyAsync(res);
         }
 
         [Command("roll")]
         [RequireContext(ContextType.Guild)]
         public async Task Roll(params string[] objects)
         {
-            try
-            {
-                int min = int.Parse(objects[0]);
-                int max = int.Parse(objects[1]);
-                await ReplyAsync($"{Context.User.Username} {TryAndRoll.Roll(min, max, true)}");
-            } catch (Exception ex) {
-                Console.WriteLine("Roll command error: " + ex.Message);
-                await ReplyAsync($"{Context.User.Username} {TryAndRoll.Roll()}");
-            }
+            string res = CommonCommands.Roll(Context.User as SocketGuildUser, objects.ElementAtOrDefault(0), objects.ElementAtOrDefault(1));
+            await ReplyAsync(res);
         }
 
         [Command("updateZeus")]
@@ -139,30 +99,13 @@ namespace DiscordBot.Modules
         [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task UpdateZeus(params string[] objects)
         {
-            if (string.IsNullOrEmpty(objects[0]))
-                await ReplyAsync("Необходимо указать SteamID");
-
-            long steamID;
-            int state = 1;
-
-            var success = long.TryParse(objects.ElementAtOrDefault(0), out steamID);
-            if (!success)
-            {
-                await ReplyAsync($"Ошибка при обработке преданного SteamID [{objects[0]}]");
-            }
-
-            if (!string.IsNullOrEmpty(objects.ElementAtOrDefault(1))) {
-                success = int.TryParse(objects[1], out state);
-                if (!success)
-                {
-                    await ReplyAsync($"Ошибка при обработке управляющего параметра [{objects[1]}]");
-                }
-            }
-
-            MySQLClient.UpdateZeus(steamID, state);
-            WebSocketClient.UpdateZeus(steamID.ToString(), state.ToString());
-
-            await ReplyAsync($"Для игрока с SteamID [{steamID}] зевс успешно обновлен [{(state == 1 ? "true" : "false")}]");
+            var steamID = objects.ElementAtOrDefault(0);
+            var state = objects.ElementAtOrDefault(1);
+            var temp = objects.ElementAtOrDefault(2) == "true" ? true : false;
+            if (string.IsNullOrEmpty(state) || state == "1")
+                await ReplyAsync(PlayerCommands.ZeusGive(Context.User as SocketGuildUser, steamID, temp));
+            else
+                await ReplyAsync(PlayerCommands.ZeusRemove(Context.User as SocketGuildUser, steamID));
         }
 
         [Command("updateInfi")]
@@ -171,95 +114,14 @@ namespace DiscordBot.Modules
         [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task UpdateInfiSTAR(params string[] objects)
         {
-            if (string.IsNullOrEmpty(objects[0]))
-                await ReplyAsync("Необходимо указать SteamID");
+            var steamID = objects.ElementAtOrDefault(0);
+            var rank = objects.ElementAtOrDefault(1);
+            var temp = objects.ElementAtOrDefault(2) == "true" ? true : false;
+            if (string.IsNullOrEmpty(rank))
+                await ReplyAsync(PlayerCommands.InfistarRemove(Context.User as SocketGuildUser, steamID));
+            else
+                await ReplyAsync(PlayerCommands.InfistarGive(Context.User as SocketGuildUser, steamID, rank, temp));
 
-            long steamID;
-            int state = 1;
-
-            var success = long.TryParse(objects.ElementAtOrDefault(0), out steamID);
-            if (!success)
-            {
-                await ReplyAsync($"Ошибка при обработке преданного SteamID [{objects[0]}]");
-            }
-
-            if (!string.IsNullOrEmpty(objects.ElementAtOrDefault(1)))
-            {
-                success = int.TryParse(objects[1], out state);
-                if (!success)
-                {
-                    await ReplyAsync($"Ошибка при обработке управляющего параметра [{objects[1]}]");
-                }
-            }
-
-            MySQLClient.UpdateInfiSTAR(steamID, state);
-            WebSocketClient.UpdateInfiSTAR(steamID.ToString(), state.ToString());
-
-            await ReplyAsync($"Для игрока с SteamID [{steamID}] infiSTAR успешно обновлен [{state}]");
-        }
-
-        [Command("updateZeusTemp")]
-        [Summary("Временно выдать или забрать зевс")]
-        [RequireContext(ContextType.Guild)]
-        [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
-        public async Task UpdateZeusTemp(params string[] objects)
-        {
-            if (string.IsNullOrEmpty(objects[0]))
-                await ReplyAsync("Необходимо указать SteamID");
-
-            long steamID;
-            int state = 1;
-
-            var success = long.TryParse(objects.ElementAtOrDefault(0), out steamID);
-            if (!success)
-            {
-                await ReplyAsync($"Ошибка при обработке преданного SteamID [{objects[0]}]");
-            }
-
-            if (!string.IsNullOrEmpty(objects.ElementAtOrDefault(1)))
-            {
-                success = int.TryParse(objects[1], out state);
-                if (!success)
-                {
-                    await ReplyAsync($"Ошибка при обработке управляющего параметра [{objects[1]}]");
-                }
-            }
-
-            WebSocketClient.UpdateZeus(steamID.ToString(), state.ToString());
-
-            await ReplyAsync($"Для игрока с SteamID [{steamID}] зевс успешно временно обновлен [{(state == 1 ? "true" : "false")}]");
-        }
-
-        [Command("updateInfiTemp")]
-        [Summary("Временно выдать или забрать infiSTAR")]
-        [RequireContext(ContextType.Guild)]
-        [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
-        public async Task UpdateInfiSTARTemp(params string[] objects)
-        {
-            if (string.IsNullOrEmpty(objects[0]))
-                await ReplyAsync("Необходимо указать SteamID");
-
-            long steamID;
-            int state = 1;
-
-            var success = long.TryParse(objects.ElementAtOrDefault(0), out steamID);
-            if (!success)
-            {
-                await ReplyAsync($"Ошибка при обработке преданного SteamID [{objects[0]}]");
-            }
-
-            if (!string.IsNullOrEmpty(objects.ElementAtOrDefault(1)))
-            {
-                success = int.TryParse(objects[1], out state);
-                if (!success)
-                {
-                    await ReplyAsync($"Ошибка при обработке управляющего параметра [{objects[1]}]");
-                }
-            }
-
-            WebSocketClient.UpdateInfiSTAR(steamID.ToString(), state.ToString());
-
-            await ReplyAsync($"Для игрока с SteamID [{steamID}] infiSTAR успешно временно обновлен [{state}]");
         }
 
         [Command("infiPlayersList")]
@@ -268,19 +130,8 @@ namespace DiscordBot.Modules
         [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task InfiPlayersList(params string[] objects)
         {
-            var players = MySQLClient.InfiPlayersList();
-            var embed = new EmbedBuilder
-            {
-                Title = "Список пользователей с infiSTAR",
-                Color = Color.Red
-            };
-            var groups = players.GroupBy(p => p.Infistar);
-            foreach (var group in groups)
-            {
-                embed.AddField($"Rank {group.Key}", string.Join("\n", group.Select(p => { return p.SteamName + " - " + p.SteamID.ToString(); })));
-            }
-
-            await ReplyAsync(embed: embed.Build());
+            var res = PlayerCommands.InfistarList(Context.User as SocketGuildUser);
+            await ReplyAsync(embed: res);
         }
 
         [Command("zeusPlayersList")]
@@ -289,15 +140,8 @@ namespace DiscordBot.Modules
         [RequireManageAccess(ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task ZeusPlayersList(params string[] objects)
         {
-            var players = MySQLClient.ZeusPlayersList();
-            var embed = new EmbedBuilder
-            {
-                Title = "Список пользователей с Zeus",
-                Description = string.Join("\n", players.Select(p => { return p.SteamName + " - " + p.SteamID.ToString(); })),
-                Color = Color.Blue
-            };
-
-            await ReplyAsync(embed: embed.Build());
+            var res = PlayerCommands.ZeusList(Context.User as SocketGuildUser);
+            await ReplyAsync(embed: res);
         }
 
         [Command("banPlayer")]
@@ -306,69 +150,11 @@ namespace DiscordBot.Modules
         [RequireUserPermission(GuildPermission.BanMembers, ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task BanPlayer(params string[] objects)
         {
-            if (string.IsNullOrEmpty(objects[0]))
-                await ReplyAsync("Необходимо указать SteamID");
-
-            long steamID;
-            TimeSpan banTime = TimeSpan.Zero;
-            DateTime endTime = DateTime.Now;
-            string reason = "";
-            int infinity = 0;
-
-            var success = long.TryParse(objects.ElementAtOrDefault(0), out steamID);
-            if (!success)
-            {
-                await ReplyAsync($"Ошибка при обработке преданного SteamID [{objects[0]}]");
-            }
-
-            if (!string.IsNullOrEmpty(objects.ElementAtOrDefault(1)))
-            {
-                int temp;
-                success = int.TryParse(objects[1], out temp);
-                if (success)
-                {
-                    if (temp == 0)
-                    {
-                        infinity = 1;
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        banTime = objects[1].ParseTimeSpan();
-                        endTime = endTime + banTime;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
-                }
-            } else
-            {
-                infinity = 1;
-            }
-
-            if (!string.IsNullOrEmpty(objects.ElementAtOrDefault(2)))
-            {
-                reason = objects[2];
-            }
-
-            MySQLClient.BanPlayer(steamID, endTime, reason, infinity);
-            WebSocketClient.BanPlayer(steamID.ToString(), endTime, reason);
-
-            var user = Context.User as SocketGuildUser;
-            var embed = new EmbedBuilder
-            {
-                Title = $"Игрок {steamID} забанен",
-                Color = Color.Red
-            };
-            embed.AddField($"Окончание блокировки", infinity == 1 ? "Никогда" : endTime.ToString());
-            embed.AddField($"Причина", reason);
-            embed.AddField($"Админ", user.Mention);
-            embed.Timestamp = DateTime.Now;
-
-            await ReplyAsync(embed: embed.Build());
+            var steamID = objects.ElementAtOrDefault(0);
+            var banTime = objects.ElementAtOrDefault(1);
+            var reason = objects.ElementAtOrDefault(2);
+            var res = PlayerCommands.Ban(Context.User as SocketGuildUser, reason, banTime, steamID: steamID);
+            await ReplyAsync(embed: res);
         }
 
         [Command("kickPlayer")]
@@ -377,36 +163,10 @@ namespace DiscordBot.Modules
         [RequireUserPermission(GuildPermission.BanMembers, ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task KickPlayer(params string[] objects)
         {
-            if (string.IsNullOrEmpty(objects[0]))
-                await ReplyAsync("Необходимо указать SteamID");
-
-            long steamID;
-            string reason = "";
-
-            var success = long.TryParse(objects.ElementAtOrDefault(0), out steamID);
-            if (!success)
-            {
-                await ReplyAsync($"Ошибка при обработке преданного SteamID [{objects[0]}]");
-            }
-
-            if (!string.IsNullOrEmpty(objects.ElementAtOrDefault(1)))
-            {
-                reason = objects[1];
-            }
-
-            WebSocketClient.KickPlayer(steamID.ToString(), reason);
-
-            var user = Context.User as SocketGuildUser;
-            var embed = new EmbedBuilder
-            {
-                Title = $"Игрок {steamID} кикнут",
-                Color = Color.DarkBlue
-            };
-            embed.AddField($"Причина", reason);
-            embed.AddField($"Админ", user.Mention);
-            embed.Timestamp = DateTime.Now;
-
-            await ReplyAsync(embed: embed.Build());
+            var steamID = objects.ElementAtOrDefault(0);
+            var reason = objects.ElementAtOrDefault(1);
+            var res = PlayerCommands.Kick(Context.User as SocketGuildUser, reason, steamID: steamID);
+            await ReplyAsync(embed: res);
         }
 
         [Command("unBanPlayer")]
@@ -415,29 +175,9 @@ namespace DiscordBot.Modules
         [RequireUserPermission(GuildPermission.BanMembers, ErrorMessage = "Недостаточно прав для использования команды")]
         public async Task UnBanPlayer(params string[] objects)
         {
-            if (string.IsNullOrEmpty(objects[0]))
-                await ReplyAsync("Необходимо указать SteamID");
-
-            long steamID;
-
-            var success = long.TryParse(objects.ElementAtOrDefault(0), out steamID);
-            if (!success)
-            {
-                await ReplyAsync($"Ошибка при обработке преданного SteamID [{objects[0]}]");
-            }
-
-            MySQLClient.UnBanPlayer(steamID);
-
-            var user = Context.User as SocketGuildUser;
-            var embed = new EmbedBuilder
-            {
-                Title = $"Игрок {steamID} разбанен",
-                Color = Color.Green
-            };
-            embed.AddField($"Админ", user.Mention);
-            embed.Timestamp = DateTime.Now;
-
-            await ReplyAsync(embed: embed.Build());
+            var steamID = objects.ElementAtOrDefault(0);
+            var res = PlayerCommands.UnBan(Context.User as SocketGuildUser, steamID: steamID);
+            await ReplyAsync(embed: res);
         }
     }
 }

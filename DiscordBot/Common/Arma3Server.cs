@@ -21,7 +21,7 @@ namespace DiscordBot.Common
         private static string _curProcessOwner { get; set; }
         private static string CurProcessOwner { get => _curProcessOwner ??= GetProcessOwner(Process.GetCurrentProcess().Id); }
 
-        public static bool StartServer()
+        public static void StartServer()
         {
             UpdateMission();
             Arma3Process = new Process();
@@ -40,15 +40,14 @@ namespace DiscordBot.Common
                     $"-port=" + Program.Configuration.ServerGamePort;
                 Console.WriteLine("Starting Arma 3 server: " + Arma3Process.StartInfo.Arguments);
                 Arma3Process.Start();
-                return true;
             } catch (Exception e)
             {
-                Console.WriteLine($"Ошибка при запуске сервера {e.Message}");
-                return false;
+                Console.WriteLine($"Ошибка при запуске сервера {e}");
+                throw new Exception("Ошибка при запуске сервера");
             }
         }
 
-        public static bool StopServer()
+        public static void StopServer()
         {
             try
             {
@@ -63,27 +62,18 @@ namespace DiscordBot.Common
                         process.Kill();
                     }
                 }
-                return true;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Ошибка при остановке сервера {e.Message}");
-                return false;
+                Console.WriteLine($"Ошибка при остановке сервера {e}");
+                throw new Exception("Ошибка при остановке сервера");
             }
         }
 
-        public static string RestartServer()
+        public static void RestartServer()
         {
-            bool res;
-            res = StopServer();
-            if (!res)
-                return "Ошибка при остановке сервера";
-
-            res = StartServer();
-            if (!res)
-                return "Ошибка при запуске сервера";
-
-            return "Сервер успешно перезагружен";
+            StopServer();
+            StartServer();
         }
 
         public static void ClearDownloadFolder()
@@ -131,7 +121,7 @@ namespace DiscordBot.Common
             return null;
         }
 
-        public static bool MoveNewMission(string ms)
+        public static void MoveNewMission(string ms)
         {
             try
             {
@@ -139,17 +129,15 @@ namespace DiscordBot.Common
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                return false;
+                Console.WriteLine($"Ошибка при переносе новой миссии {e}");
+                throw new Exception("Ошибка при переносе новой миссии");
             }
             Console.WriteLine($"Загруженная миссия перемещна в по пути {Program.Configuration.A3serverPath}\\mpmissions\\{Path.GetFileName(ms)}");
-            return true;
         }
 
-        public static bool SetMS(string ms)
+        public static void SetMS(string ms)
         {
             var path = Program.Configuration.A3serverPath + "\\" + Program.Configuration.A3ServerConfigName;
-            bool success = false;
             List<string> newFile = new List<string>();
             using (StreamReader sr = new StreamReader(path))
             {
@@ -165,16 +153,19 @@ namespace DiscordBot.Common
             }
             using (StreamWriter sw = new StreamWriter(path))
             {
-                foreach (string line in newFile) {
-                    sw.WriteLine(line);
+                try
+                {
+                    foreach (string line in newFile)
+                    {
+                        sw.WriteLine(line);
+                    }
+                } catch (Exception e)
+                {
+                    Console.WriteLine($"Ошибка при записи миссии {ms} в конфиг {e}");
+                    throw new Exception($"Ошибка при записи миссии {ms} в конфиг");
                 }
-                success = true;
             }
-            if (success) 
                 Console.WriteLine($"Миссия изменена на {ms}");
-            else
-                Console.WriteLine($"Ошибка при записи миссии {ms} в конфиг");
-            return success;
         }
 
         public static void UpdateMission()
@@ -183,9 +174,7 @@ namespace DiscordBot.Common
             if (ms == null) return;
 
             Thread.Sleep(5000);
-            var move = MoveNewMission(ms);
-            if (move == false) return;
-
+            MoveNewMission(ms);
             SetMS(ms);
         }
 

@@ -12,6 +12,7 @@ namespace DiscordBot.Configs
         ///     Discord api bot token
         /// </summary>
         public string BotToken { get; set; }
+        public string CommandsPrefix { get; set; }
         public string BotStatusGame { get; set; }
         public string BotStatusServerDisabled { get; set; }
         public int BotStatusUpdateInterval { get; set; }

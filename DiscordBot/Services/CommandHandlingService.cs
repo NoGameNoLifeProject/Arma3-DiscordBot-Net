@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.Configs;
 
 namespace DiscordBot.Services
 {
@@ -13,6 +14,8 @@ namespace DiscordBot.Services
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
         private readonly IServiceProvider _services;
+        private Config _config;
+        private Config Config => _config ??= Program.Configuration;
 
         public CommandHandlingService(IServiceProvider services)
         {
@@ -36,7 +39,7 @@ namespace DiscordBot.Services
             if (message.Source != MessageSource.User) return;
 
             var argPos = 0;
-            if (!message.HasCharPrefix('!', ref argPos)) return;
+            if (!message.HasStringPrefix(Config.CommandsPrefix, ref argPos)) return;
 
             var context = new SocketCommandContext(_discord, message);
 

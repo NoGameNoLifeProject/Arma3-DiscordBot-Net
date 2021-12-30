@@ -10,8 +10,8 @@ using DiscordBot.Services;
 using DiscordBot.Configs;
 using System.Reactive.Linq;
 using DiscordBot.GoogleSheets;
-using DiscordBotTest.Common;
 using Microsoft.Extensions.Configuration;
+using DiscordBot.Modules;
 
 namespace DiscordBot
 {
