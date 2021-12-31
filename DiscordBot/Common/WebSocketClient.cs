@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DiscordBot.Configs;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Serilog;
 using WebSocketSharp;
 
 namespace DiscordBot.Common
@@ -57,11 +58,11 @@ namespace DiscordBot.Common
             {
                 var ws = new WebSocket($"ws://{Config.Server}:{Config.Port}/BotCommands");
 
-                ws.OnMessage += (sender, e) => Console.WriteLine(e.Data);
+                ws.OnMessage += (sender, e) => Log.Information("WebSocket message {Message}", e.Data);
 
-                ws.OnError += (sender, e) => Console.WriteLine(e.Message);
+                ws.OnError += (sender, e) => Log.Error("WebSocket error {Error}", e.Message);
 
-                ws.OnClose += (sender, e) => Console.WriteLine(e.Reason);
+                ws.OnClose += (sender, e) => Log.Information("WebSocket closed {Reason}", e.Reason);
 
                 ws.OnOpen += (sender, e) => ws.Send("Discord Bot Connected");
 

@@ -14,6 +14,7 @@ using Discord.Commands;
 using DiscordBot.Configs;
 using DiscordBot;
 using DiscordBot.Modules.Commands;
+using Serilog;
 
 namespace DiscordBot.Modules
 {
@@ -43,7 +44,7 @@ namespace DiscordBot.Modules
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Log.Error(ex, "Ошибка при регистрации slash комманд");
             }
         }
 
@@ -198,6 +199,7 @@ namespace DiscordBot.Modules
                 var commandName = command.Data.Options.First().Name;
                 var commandSubValues = command.Data.Options.First().Options?.ToDictionary(x => x.Name, x => x.Value.ToString());
 
+                Log.Information("{User} использовал комманду server {commandName}", command.User, commandName);
                 string res;
                 switch (commandName)
                 {
@@ -223,9 +225,13 @@ namespace DiscordBot.Modules
                         break;
                 }
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", command.User, ex.Message);
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Log.Error(ex, "Ошибка при обработке комманды");
                 await command.RespondAsync(ex.Message, ephemeral: true);
             }
         }
@@ -238,6 +244,7 @@ namespace DiscordBot.Modules
                 var commandSubName = command.Data.Options.First().Options.First().Name;
                 var commandSubValues = command.Data.Options.First().Options.First().Options?.ToDictionary(x => x.Name, x => x.Value.ToString());
 
+                Log.Information("{User} использовал комманду player {commandName} {commandSubName}", command.User, commandName, commandSubName);
                 string res;
                 Embed embed;
                 switch (commandName)
@@ -334,9 +341,13 @@ namespace DiscordBot.Modules
                         break;
                 }
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", command.User, ex.Message);
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Log.Error(ex, "Ошибка при обработке комманды");
                 await command.RespondAsync(ex.Message, ephemeral: true);
             }
         }

@@ -1,5 +1,6 @@
 ﻿using DiscordBot.Configs;
 using Newtonsoft.Json;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -24,7 +25,7 @@ namespace DiscordBot.Services
                 return json["response"].servers[0];
             } catch (Exception e)
             {
-                Console.WriteLine($"Ошибка при выполнении запроса к Steam API {e.Message}");
+                Log.Warning("Ошибка при выполнении запроса к Steam API {Error}", e.Message);
                 return new Server();
             }
         }

@@ -6,6 +6,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Configs;
+using Serilog;
 
 namespace DiscordBot.Services
 {
@@ -54,6 +55,7 @@ namespace DiscordBot.Services
             if (result.IsSuccess)
                 return;
 
+            Log.Error("Ошибка: {Error}", result.ErrorReason);
             await context.Channel.SendMessageAsync($"Ошибка: {result.ErrorReason}");
         }
     }

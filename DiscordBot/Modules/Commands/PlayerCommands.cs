@@ -2,6 +2,7 @@
 using Discord;
 using Discord.WebSocket;
 using DiscordBot.Common;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,8 @@ namespace DiscordBot.Modules.Commands
             if (!temp)
                 MySQLClient.UpdateZeus(steamIDlong, 1);
             WebSocketClient.UpdateZeus(steamID, "1");
+
+            Log.Information("{User} выдал zeus игроку {steamID}", user, steamID);
             return $"Игроку {steamID} успешно выдан zeus";
         }
 
@@ -30,6 +33,8 @@ namespace DiscordBot.Modules.Commands
             var steamIDlong = Utils.ConvertLong(steamID);
             MySQLClient.UpdateZeus(steamIDlong, 0);
             WebSocketClient.UpdateZeus(steamID, "0");
+
+            Log.Information("{User} забрал zeus у игрока {steamID}", user, steamID);
             return $"У игрока {steamID} успешно забран zeus";
         }
 
@@ -55,6 +60,8 @@ namespace DiscordBot.Modules.Commands
             if (!temp)
                 MySQLClient.UpdateInfiSTAR(steamIDlong, ranklong);
             WebSocketClient.UpdateInfiSTAR(steamID, rank);
+
+            Log.Information("{User} выдал infiSTAR игроку {steamID}, Уровень = {rank}", user, steamID, rank);
             return $"Игроку {steamID} успешно выдан infiSTAR, Уровень = {rank}";
         }
 
@@ -65,6 +72,8 @@ namespace DiscordBot.Modules.Commands
             var steamIDlong = Utils.ConvertLong(steamID);
             MySQLClient.UpdateInfiSTAR(steamIDlong, 0);
             WebSocketClient.UpdateInfiSTAR(steamID, "0");
+
+            Log.Information("{User} забрал infiSTAR у игрока {steamID}", user, steamID);
             return $"У игрока {steamID} успешно забран infiSTAR";
         }
 
@@ -108,6 +117,8 @@ namespace DiscordBot.Modules.Commands
             embed.AddField($"Окончание блокировки", cbanTime.Item1 == 1 ? "Никогда" : cbanTime.Item2.ToString());
             embed.AddField($"Причина", reason);
             embed.AddField($"Админ", user.Mention);
+
+            Log.Information("{User} забанил игрока {steamID} \n Окончание блокировки: {(BanTime} \n Причина: {reason} ", user, steamID, (cbanTime.Item1 == 1 ? "Никогда" : cbanTime.Item2.ToString()), reason);
             return embed.Build();
         }
 
@@ -131,6 +142,8 @@ namespace DiscordBot.Modules.Commands
             embed.WithTitle($"Игрок {steamIDlong} разбанен");
             embed.WithColor(Color.Green);
             embed.AddField($"Админ", user.Mention);
+
+            Log.Information("{User} разбанил игрока {steamID}", user, steamID);
             return embed.Build();
         }
 
@@ -155,6 +168,8 @@ namespace DiscordBot.Modules.Commands
             embed.WithColor(Color.DarkBlue);
             embed.AddField($"Причина", reason);
             embed.AddField($"Админ", user.Mention);
+
+            Log.Information("{User} кикнул игрока {steamID} \n Причина: {reason}", user, steamID, reason);
             return embed.Build();
         }
     }

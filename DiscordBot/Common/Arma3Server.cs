@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Management;
+using Serilog;
 
 namespace DiscordBot.Common
 {
@@ -38,11 +39,11 @@ namespace DiscordBot.Common
                     $"-servermod={string.Join(";", Config.ServerMods.Keys.ToList().Select(x => Config.A3ModsPath + x))} " +
                     $"-world=empty -autoInit -bepath=BattlEye " +
                     $"-port=" + Program.Configuration.ServerGamePort;
-                Console.WriteLine("Starting Arma 3 server: " + Arma3Process.StartInfo.Arguments);
+                Log.Information("Starting Arma 3 server {Args}", Arma3Process.StartInfo.Arguments);
                 Arma3Process.Start();
-            } catch (Exception e)
+            } catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при запуске сервера {e}");
+                Log.Error(ex, "Ошибка при запуске сервера");
                 throw new Exception("Ошибка при запуске сервера");
             }
         }
@@ -63,9 +64,9 @@ namespace DiscordBot.Common
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при остановке сервера {e}");
+                Log.Error(ex, "Ошибка при остановке сервера");
                 throw new Exception("Ошибка при остановке сервера");
             }
         }
@@ -87,15 +88,15 @@ namespace DiscordBot.Common
                     {
                         File.Move(file, Program.Configuration.A3serverPath + "\\mpmissions\\" + file);
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        Console.WriteLine(e.Message);
+                        Log.Error(ex, "Ошибка при преносе миссии из временного каталога");
                         try
                         {
                             File.Delete(file);
-                        }catch  (Exception e2)
+                        }catch  (Exception ex2)
                         {
-                            Console.WriteLine(e2.Message);
+                            Log.Error(ex2, "Ошибка при удалении мисии из временного каталога");
                         }
                     }
                 }
@@ -127,12 +128,12 @@ namespace DiscordBot.Common
             {
                 File.Move(ms, Program.Configuration.A3serverPath + "\\mpmissions\\" + Path.GetFileName(ms), true);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при переносе новой миссии {e}");
+                Log.Error(ex, "Ошибка при переносе новой миссии");
                 throw new Exception("Ошибка при переносе новой миссии");
             }
-            Console.WriteLine($"Загруженная миссия перемещна в по пути {Program.Configuration.A3serverPath}\\mpmissions\\{Path.GetFileName(ms)}");
+            Log.Information("Загруженная миссия перемещна в по пути {Path}", Program.Configuration.A3serverPath + "\\mpmissions\\" + Path.GetFileName(ms));
         }
 
         public static void SetMS(string ms)
@@ -159,13 +160,13 @@ namespace DiscordBot.Common
                     {
                         sw.WriteLine(line);
                     }
-                } catch (Exception e)
+                } catch (Exception ex)
                 {
-                    Console.WriteLine($"Ошибка при записи миссии {ms} в конфиг {e}");
+                    Log.Error(ex, "Ошибка при записи миссии {Mission} в конфиг", ms);
                     throw new Exception($"Ошибка при записи миссии {ms} в конфиг");
                 }
             }
-                Console.WriteLine($"Миссия изменена на {ms}");
+            Log.Information("Миссия изменена на {Mission}", ms);
         }
 
         public static void UpdateMission()

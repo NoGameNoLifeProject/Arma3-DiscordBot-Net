@@ -2,6 +2,7 @@
 using Discord;
 using Discord.WebSocket;
 using DiscordBot.Common;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,8 +21,9 @@ namespace DiscordBot.Modules.Commands
             try
             {
                 Arma3Server.StartServer();
-            } catch (Exception)
+            } catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при запуске сервера");
                 return "Ошибка при запуске сервера";
             }
             return "Сервер успешно запущен";
@@ -33,9 +35,9 @@ namespace DiscordBot.Modules.Commands
             try
             {
                 Arma3Server.StopServer();
-            }
-            catch (Exception)
+            } catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при остановке сервера");
                 return "Ошибка при остановке сервера";
             }
             return "Сервер успешно остановлен";
@@ -48,8 +50,9 @@ namespace DiscordBot.Modules.Commands
             {
                 Arma3Server.RestartServer();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при перезагрузке сервера");
                 return "Ошибка при перезагрузке сервера";
             }
             return "Сервер успешно перезагружен";
@@ -62,8 +65,9 @@ namespace DiscordBot.Modules.Commands
             try {
                 Arma3Server.SetMS(mission);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при установке миссии");
                 return "Ошибка при установке миссии";
             }
             return "Миссия успешно изменена";
@@ -80,8 +84,9 @@ namespace DiscordBot.Modules.Commands
 
                 return "Доступные миссии:\n" + String.Join("\n", newlist);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при получении списка доступных миссий");
                 return "Ошибка при получении списка доступных миссий";
             }
         }
@@ -109,8 +114,9 @@ namespace DiscordBot.Modules.Commands
                 }
                 return "Миссия успешно загружена и будет установлена при следующем запуске";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при загрузке миссии");
                 return "Ошибка при загрузке миссии";
             }
         }

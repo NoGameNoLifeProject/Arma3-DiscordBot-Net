@@ -12,6 +12,7 @@ using System.Reactive.Linq;
 using DiscordBot.GoogleSheets;
 using Microsoft.Extensions.Configuration;
 using DiscordBot.Modules;
+using Serilog;
 
 namespace DiscordBot
 {
@@ -47,7 +48,17 @@ namespace DiscordBot
 
             Configuration = builder.GetSection("Config").Get<Config>();
 
-            using (var services = ConfigureServices())
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Async(a => a.File("logs/DiscordBot.log", rollingInterval: RollingInterval.Day))
+                .WriteTo.Async(a => a.Console())
+                .CreateLogger();
+
+            var botConfig = new DiscordSocketConfig()
+            {
+                GatewayIntents = GatewayIntents.GuildMembers | GatewayIntents.GuildMessages | GatewayIntents.GuildMessageTyping | GatewayIntents.Guilds
+            };
+
+            using (var services = ConfigureServices(botConfig))
             {
                 Client = services.GetRequiredService<DiscordSocketClient>();
 
@@ -81,15 +92,15 @@ namespace DiscordBot
 
         private Task LogAsync(LogMessage log)
         {
-            Console.WriteLine(log.ToString());
+            Log.Information(log.ToString());
 
             return Task.CompletedTask;
         }
 
-        private ServiceProvider ConfigureServices()
+        private ServiceProvider ConfigureServices(DiscordSocketConfig botConfig)
         {
             return new ServiceCollection()
-                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton(new DiscordSocketClient(botConfig))
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<HttpClient>()

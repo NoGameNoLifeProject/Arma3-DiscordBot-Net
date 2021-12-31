@@ -143,7 +143,7 @@ namespace DiscordBot.Modules.Commands
                     break;
             }
 
-            throw new Exception("Недостаточно прав для использования программы");
+            throw new UnauthorizedAccessException("Недостаточно прав для использования программы");
         }
     }
 }
