@@ -13,10 +13,10 @@ namespace DiscordBot.Modules.Commands
 {
     public static class PlayerCommands
     {
-        public static string ZeusGive(SocketGuildUser user, string steamID, bool temp = false)
+        public static async Task<string> ZeusGive(SocketGuildUser user, string steamID, bool temp = false)
         {
             Guard.Argument(steamID, nameof(steamID)).NotNull().Length(17);
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Zeus);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Zeus);
             var steamIDlong = Utils.ConvertLong(steamID);
             if (!temp)
                 MySQLClient.UpdateZeus(steamIDlong, 1);
@@ -26,10 +26,10 @@ namespace DiscordBot.Modules.Commands
             return $"Игроку {steamID} успешно выдан zeus";
         }
 
-        public static string ZeusRemove(SocketGuildUser user, string steamID)
+        public static async Task<string> ZeusRemove(SocketGuildUser user, string steamID)
         {
             Guard.Argument(steamID, nameof(steamID)).NotNull().Length(17);
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Zeus);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Zeus);
             var steamIDlong = Utils.ConvertLong(steamID);
             MySQLClient.UpdateZeus(steamIDlong, 0);
             WebSocketClient.UpdateZeus(steamID, "0");
@@ -38,9 +38,9 @@ namespace DiscordBot.Modules.Commands
             return $"У игрока {steamID} успешно забран zeus";
         }
 
-        public static Embed ZeusList(SocketGuildUser user)
+        public static async Task<Embed> ZeusList(SocketGuildUser user)
         {
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Zeus);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Zeus);
             var players = MySQLClient.ZeusPlayersList();
             EmbedBuilder embed = new EmbedBuilder();
             embed.Timestamp = DateTime.Now;
@@ -50,11 +50,11 @@ namespace DiscordBot.Modules.Commands
             return embed.Build();
         }
 
-        public static string InfistarGive(SocketGuildUser user, string steamID, string rank = "1", bool temp = false)
+        public static async Task<string> InfistarGive(SocketGuildUser user, string steamID, string rank = "1", bool temp = false)
         {
             Guard.Argument(steamID, nameof(steamID)).NotNull().Length(17);
             Guard.Argument(rank, nameof(rank)).NotEmpty();
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Infistar);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Infistar);
             var steamIDlong = Utils.ConvertLong(steamID);
             var ranklong = Utils.ConvertInt(rank);
             if (!temp)
@@ -65,10 +65,10 @@ namespace DiscordBot.Modules.Commands
             return $"Игроку {steamID} успешно выдан infiSTAR, Уровень = {rank}";
         }
 
-        public static string InfistarRemove(SocketGuildUser user, string steamID)
+        public static async Task<string> InfistarRemove(SocketGuildUser user, string steamID)
         {
             Guard.Argument(steamID, nameof(steamID)).NotNull().Length(17);
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Infistar);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Infistar);
             var steamIDlong = Utils.ConvertLong(steamID);
             MySQLClient.UpdateInfiSTAR(steamIDlong, 0);
             WebSocketClient.UpdateInfiSTAR(steamID, "0");
@@ -77,9 +77,9 @@ namespace DiscordBot.Modules.Commands
             return $"У игрока {steamID} успешно забран infiSTAR";
         }
 
-        public static Embed InfistarList(SocketGuildUser user)
+        public static async Task<Embed> InfistarList(SocketGuildUser user)
         {
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Infistar);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Infistar);
             var players = MySQLClient.InfiPlayersList();
             var groups = players.GroupBy(p => p.Infistar).OrderBy(p => p.Key);
             EmbedBuilder embed = new EmbedBuilder();
@@ -93,7 +93,7 @@ namespace DiscordBot.Modules.Commands
             return embed.Build();
         }
 
-        public static Embed Ban(SocketGuildUser user, string reason, string banTime, int infinity = 0, string steamID = "", string name = "")
+        public static async Task<Embed> Ban(SocketGuildUser user, string reason, string banTime, int infinity = 0, string steamID = "", string name = "")
         {
             long steamIDlong;
             if (string.IsNullOrEmpty(steamID))
@@ -104,7 +104,7 @@ namespace DiscordBot.Modules.Commands
             {
                 steamIDlong = Utils.ConvertLong(steamID);
             }
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Ban);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Ban);
             var cbanTime = Utils.ConvertBanTime(banTime);
 
             MySQLClient.BanPlayer(steamIDlong, cbanTime.Item2, reason, cbanTime.Item1);
@@ -122,7 +122,7 @@ namespace DiscordBot.Modules.Commands
             return embed.Build();
         }
 
-        public static Embed UnBan(SocketGuildUser user, string steamID = "", string name = "")
+        public static async Task<Embed> UnBan(SocketGuildUser user, string steamID = "", string name = "")
         {
             long steamIDlong;
             if (string.IsNullOrEmpty(steamID))
@@ -134,7 +134,7 @@ namespace DiscordBot.Modules.Commands
             {
                 steamIDlong = Utils.ConvertLong(steamID);
             }
-            Utils.CheckPermissions(user, PermissionsEnumCommands.UnBan);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.UnBan);
             MySQLClient.UnBanPlayer(steamIDlong);
 
             EmbedBuilder embed = new EmbedBuilder();
@@ -147,7 +147,7 @@ namespace DiscordBot.Modules.Commands
             return embed.Build();
         }
 
-        public static Embed Kick(SocketGuildUser user, string reason, string steamID = "", string name = "")
+        public static async Task<Embed> Kick(SocketGuildUser user, string reason, string steamID = "", string name = "")
         {
             long steamIDlong;
             if (string.IsNullOrEmpty(steamID))
@@ -159,7 +159,7 @@ namespace DiscordBot.Modules.Commands
             {
                 steamIDlong = Utils.ConvertLong(steamID);
             }
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Kick);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Kick);
             WebSocketClient.KickPlayer(steamIDlong.ToString(), reason);
 
             EmbedBuilder embed = new EmbedBuilder();

@@ -25,7 +25,7 @@ namespace DiscordBot.Modules
             try
             {
                 Log.Information("{User} использовал комманду restart", Context.User);
-                string res = ServerCommands.RestartServer(Context.User as SocketGuildUser);
+                string res = await ServerCommands.RestartServer(Context.User as SocketGuildUser);
                 await ReplyAsync(res);
             }
             catch (UnauthorizedAccessException ex)
@@ -48,7 +48,7 @@ namespace DiscordBot.Modules
             try
             {
                 Log.Information("{User} использовал комманду start", Context.User);
-                string res = ServerCommands.StartServer(Context.User as SocketGuildUser);
+                string res = await ServerCommands.StartServer(Context.User as SocketGuildUser);
                 await ReplyAsync(res);
             }
             catch (UnauthorizedAccessException ex)
@@ -71,7 +71,7 @@ namespace DiscordBot.Modules
             try
             {
                 Log.Information("{User} использовал комманду stop", Context.User);
-                string res = ServerCommands.StopServer(Context.User as SocketGuildUser);
+                string res = await ServerCommands.StopServer(Context.User as SocketGuildUser);
                 await ReplyAsync(res);
             }
             catch (UnauthorizedAccessException ex)
@@ -118,7 +118,7 @@ namespace DiscordBot.Modules
             try
             {
                 Log.Information("{User} использовал комманду setms", Context.User);
-                string res = ServerCommands.SetMS(Context.User as SocketGuildUser, objects.ElementAtOrDefault(0));
+                string res = await ServerCommands.SetMS(Context.User as SocketGuildUser, objects.ElementAtOrDefault(0));
                 await ReplyAsync(res);
             }
             catch (UnauthorizedAccessException ex)
@@ -141,7 +141,7 @@ namespace DiscordBot.Modules
             try
             {
                 Log.Information("{User} использовал комманду mslist", Context.User);
-                string res = ServerCommands.MsList(Context.User as SocketGuildUser);
+                string res = await ServerCommands.MsList(Context.User as SocketGuildUser);
                 await ReplyAsync(res);
             }
             catch (UnauthorizedAccessException ex)
@@ -212,9 +212,9 @@ namespace DiscordBot.Modules
                 var state = objects.ElementAtOrDefault(1);
                 var temp = objects.ElementAtOrDefault(2) == "true" ? true : false;
                 if (string.IsNullOrEmpty(state) || state == "1")
-                    await ReplyAsync(PlayerCommands.ZeusGive(Context.User as SocketGuildUser, steamID, temp));
+                    await ReplyAsync(await PlayerCommands.ZeusGive(Context.User as SocketGuildUser, steamID, temp));
                 else
-                    await ReplyAsync(PlayerCommands.ZeusRemove(Context.User as SocketGuildUser, steamID));
+                    await ReplyAsync(await PlayerCommands.ZeusRemove(Context.User as SocketGuildUser, steamID));
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -240,9 +240,9 @@ namespace DiscordBot.Modules
                 var rank = objects.ElementAtOrDefault(1);
                 var temp = objects.ElementAtOrDefault(2) == "true" ? true : false;
                 if (string.IsNullOrEmpty(rank))
-                    await ReplyAsync(PlayerCommands.InfistarRemove(Context.User as SocketGuildUser, steamID));
+                    await ReplyAsync(await PlayerCommands.InfistarRemove(Context.User as SocketGuildUser, steamID));
                 else
-                    await ReplyAsync(PlayerCommands.InfistarGive(Context.User as SocketGuildUser, steamID, rank, temp));
+                    await ReplyAsync(await PlayerCommands.InfistarGive(Context.User as SocketGuildUser, steamID, rank, temp));
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -265,7 +265,7 @@ namespace DiscordBot.Modules
             try
             {
                 Log.Information("{User} использовал комманду infiPlayersList", Context.User);
-                var res = PlayerCommands.InfistarList(Context.User as SocketGuildUser);
+                var res = await PlayerCommands.InfistarList(Context.User as SocketGuildUser);
                 await ReplyAsync(embed: res);
             }
             catch (UnauthorizedAccessException ex)
@@ -288,7 +288,7 @@ namespace DiscordBot.Modules
             try
             {
                 Log.Information("{User} использовал комманду zeusPlayersList", Context.User);
-                var res = PlayerCommands.ZeusList(Context.User as SocketGuildUser);
+                var res = await PlayerCommands.ZeusList(Context.User as SocketGuildUser);
                 await ReplyAsync(embed: res);
             }
             catch (UnauthorizedAccessException ex)
@@ -314,7 +314,7 @@ namespace DiscordBot.Modules
                 var steamID = objects.ElementAtOrDefault(0);
                 var banTime = objects.ElementAtOrDefault(1);
                 var reason = objects.ElementAtOrDefault(2);
-                var res = PlayerCommands.Ban(Context.User as SocketGuildUser, reason, banTime, steamID: steamID);
+                var res = await PlayerCommands.Ban(Context.User as SocketGuildUser, reason, banTime, steamID: steamID);
                 await ReplyAsync(embed: res);
             }
             catch (UnauthorizedAccessException ex)
@@ -339,7 +339,7 @@ namespace DiscordBot.Modules
                 Log.Information("{User} использовал комманду kickPlayer", Context.User);
                 var steamID = objects.ElementAtOrDefault(0);
                 var reason = objects.ElementAtOrDefault(1);
-                var res = PlayerCommands.Kick(Context.User as SocketGuildUser, reason, steamID: steamID);
+                var res = await PlayerCommands.Kick(Context.User as SocketGuildUser, reason, steamID: steamID);
                 await ReplyAsync(embed: res);
             }
             catch (UnauthorizedAccessException ex)
@@ -363,7 +363,7 @@ namespace DiscordBot.Modules
             {
                 Log.Information("{User} использовал комманду unBanPlayer", Context.User);
                 var steamID = objects.ElementAtOrDefault(0);
-                var res = PlayerCommands.UnBan(Context.User as SocketGuildUser, steamID: steamID);
+                var res = await PlayerCommands.UnBan(Context.User as SocketGuildUser, steamID: steamID);
                 await ReplyAsync(embed: res);
             }
             catch (UnauthorizedAccessException ex)

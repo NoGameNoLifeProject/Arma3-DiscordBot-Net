@@ -75,7 +75,7 @@ namespace DiscordBot.Modules.Commands
             return (infinity, endTime);
         }
 
-        public static async void CheckPermissions(SocketGuildUser user, PermissionsEnumCommands permissions)
+        public static async Task CheckPermissions(SocketGuildUser user, PermissionsEnumCommands permissions)
         {
             Guard.Argument(user, nameof(user)).NotNull();
             if (Program.Configuration.DiscordAdminRoleAccess && user.GuildPermissions.Administrator)
@@ -143,7 +143,7 @@ namespace DiscordBot.Modules.Commands
                     break;
             }
 
-            throw new UnauthorizedAccessException("Недостаточно прав для использования программы");
+            throw new UnauthorizedAccessException("Недостаточно прав для использования команды");
         }
     }
 }

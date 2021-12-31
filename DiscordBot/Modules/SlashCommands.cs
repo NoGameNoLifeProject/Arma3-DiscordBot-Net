@@ -204,23 +204,23 @@ namespace DiscordBot.Modules
                 switch (commandName)
                 {
                     case "start":
-                        res = ServerCommands.StartServer(command.User as SocketGuildUser);
+                        res = await ServerCommands.StartServer(command.User as SocketGuildUser);
                         await command.RespondAsync(res);
                         break;
                     case "stop":
-                        res = ServerCommands.StopServer(command.User as SocketGuildUser);
+                        res = await ServerCommands.StopServer(command.User as SocketGuildUser);
                         await command.RespondAsync(res);
                         break;
                     case "restart":
-                        res = ServerCommands.RestartServer(command.User as SocketGuildUser);
+                        res = await ServerCommands.RestartServer(command.User as SocketGuildUser);
                         await command.RespondAsync(res);
                         break;
                     case "mslist":
-                        res = ServerCommands.MsList(command.User as SocketGuildUser);
+                        res = await ServerCommands.MsList(command.User as SocketGuildUser);
                         await command.RespondAsync(res);
                         break;
                     case "setms":
-                        res = ServerCommands.SetMS(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("name", ""));
+                        res = await ServerCommands.SetMS(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("name", ""));
                         await command.RespondAsync(res);
                         break;
                 }
@@ -228,6 +228,7 @@ namespace DiscordBot.Modules
             catch (UnauthorizedAccessException ex)
             {
                 Log.Information("{User} {Error}", command.User, ex.Message);
+                await command.RespondAsync(ex.Message, ephemeral: true);
             }
             catch (Exception ex)
             {
@@ -253,15 +254,15 @@ namespace DiscordBot.Modules
                         switch (commandSubName)
                         {
                             case "give":
-                                res = PlayerCommands.ZeusGive(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"));
+                                res = await PlayerCommands.ZeusGive(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"));
                                 await command.RespondAsync(res);
                                 break;
                             case "remove":
-                                res = PlayerCommands.ZeusRemove(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"));
+                                res = await PlayerCommands.ZeusRemove(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"));
                                 await command.RespondAsync(res);
                                 break;
                             case "list":
-                                embed = PlayerCommands.ZeusList(command.User as SocketGuildUser);
+                                embed = await PlayerCommands.ZeusList(command.User as SocketGuildUser);
                                 await command.RespondAsync(embed: embed);
                                 break;
                         }
@@ -270,18 +271,18 @@ namespace DiscordBot.Modules
                         switch (commandSubName)
                         {
                             case "give":
-                                res = PlayerCommands.InfistarGive(command.User as SocketGuildUser,
+                                res = await PlayerCommands.InfistarGive(command.User as SocketGuildUser,
                                     commandSubValues.GetValueOrDefault("steamid"),
                                     commandSubValues.GetValueOrDefault("rank", "1")
                                     );
                                 await command.RespondAsync(res);
                                 break;
                             case "remove":
-                                res = PlayerCommands.InfistarRemove(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"));
+                                res = await PlayerCommands.InfistarRemove(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"));
                                 await command.RespondAsync(res);
                                 break;
                             case "list":
-                                embed = PlayerCommands.InfistarList(command.User as SocketGuildUser);
+                                embed = await PlayerCommands.InfistarList(command.User as SocketGuildUser);
                                 await command.RespondAsync(embed: embed);
                                 break;
                         }
@@ -290,7 +291,7 @@ namespace DiscordBot.Modules
                         switch (commandSubName)
                         {
                             case "by-steamid":
-                                embed = PlayerCommands.Ban(command.User as SocketGuildUser,
+                                embed = await PlayerCommands.Ban(command.User as SocketGuildUser,
                                     commandSubValues.GetValueOrDefault("reason", "Не указана"),
                                     commandSubValues.GetValueOrDefault("bantime"),
                                     steamID: commandSubValues.GetValueOrDefault("steamid")
@@ -298,7 +299,7 @@ namespace DiscordBot.Modules
                                 await command.RespondAsync(embed: embed);
                                 break;
                             case "by-profilename":
-                                embed = PlayerCommands.Ban(command.User as SocketGuildUser,
+                                embed = await PlayerCommands.Ban(command.User as SocketGuildUser,
                                     commandSubValues.GetValueOrDefault("reason", "Не указана"),
                                     commandSubValues.GetValueOrDefault("bantime"),
                                     name: commandSubValues.GetValueOrDefault("name")
@@ -311,14 +312,14 @@ namespace DiscordBot.Modules
                         switch (commandSubName)
                         {
                             case "by-steamid":
-                                embed = PlayerCommands.Kick(command.User as SocketGuildUser,
+                                embed = await PlayerCommands.Kick(command.User as SocketGuildUser,
                                     commandSubValues.GetValueOrDefault("reason", "Не указана"),
                                     steamID: commandSubValues.GetValueOrDefault("steamid")
                                    );
                                 await command.RespondAsync(embed: embed);
                                 break;
                             case "by-profilename":
-                                embed = PlayerCommands.Kick(command.User as SocketGuildUser,
+                                embed = await PlayerCommands.Kick(command.User as SocketGuildUser,
                                     commandSubValues.GetValueOrDefault("reason", "Не указана"),
                                     name: commandSubValues.GetValueOrDefault("name")
                                    );
@@ -330,11 +331,11 @@ namespace DiscordBot.Modules
                         switch (commandSubName)
                         {
                             case "by-steamid":
-                                embed = PlayerCommands.UnBan(command.User as SocketGuildUser, steamID: commandSubValues.GetValueOrDefault("steamid"));
+                                embed = await PlayerCommands.UnBan(command.User as SocketGuildUser, steamID: commandSubValues.GetValueOrDefault("steamid"));
                                 await command.RespondAsync(embed: embed);
                                 break;
                             case "by-profilename":
-                                embed = PlayerCommands.UnBan(command.User as SocketGuildUser, name: commandSubValues.GetValueOrDefault("name"));
+                                embed = await PlayerCommands.UnBan(command.User as SocketGuildUser, name: commandSubValues.GetValueOrDefault("name"));
                                 await command.RespondAsync(embed: embed);
                                 break;
                         }
@@ -344,6 +345,7 @@ namespace DiscordBot.Modules
             catch (UnauthorizedAccessException ex)
             {
                 Log.Information("{User} {Error}", command.User, ex.Message);
+                await command.RespondAsync(ex.Message, ephemeral: true);
             }
             catch (Exception ex)
             {

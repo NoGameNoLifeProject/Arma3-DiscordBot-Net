@@ -15,9 +15,9 @@ namespace DiscordBot.Modules.Commands
 {
     public static class ServerCommands
     {
-        public static string StartServer(SocketGuildUser user)
+        public static async Task<string> StartServer(SocketGuildUser user)
         {
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
             try
             {
                 Arma3Server.StartServer();
@@ -29,9 +29,9 @@ namespace DiscordBot.Modules.Commands
             return "Сервер успешно запущен";
         }
 
-        public static string StopServer(SocketGuildUser user)
+        public static async Task<string> StopServer(SocketGuildUser user)
         {
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
             try
             {
                 Arma3Server.StopServer();
@@ -43,9 +43,9 @@ namespace DiscordBot.Modules.Commands
             return "Сервер успешно остановлен";
         }
 
-        public static string RestartServer(SocketGuildUser user)
+        public static async Task<string> RestartServer(SocketGuildUser user)
         {
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Restart);
             try
             {
                 Arma3Server.RestartServer();
@@ -58,10 +58,10 @@ namespace DiscordBot.Modules.Commands
             return "Сервер успешно перезагружен";
         }
 
-        public static string SetMS(SocketGuildUser user, string mission)
+        public static async Task<string> SetMS(SocketGuildUser user, string mission)
         {
             Guard.Argument(mission, nameof(mission)).NotNull().NotEmpty();
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
             try {
                 Arma3Server.SetMS(mission);
             }
@@ -73,9 +73,9 @@ namespace DiscordBot.Modules.Commands
             return "Миссия успешно изменена";
         }
 
-        public static string MsList(SocketGuildUser user)
+        public static async Task<string> MsList(SocketGuildUser user)
         {
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
             try
             {
                 var list = Arma3Server.GetAvailableMissions();
@@ -93,7 +93,7 @@ namespace DiscordBot.Modules.Commands
 
         public static async Task<string> MsUpload(SocketGuildUser user, IReadOnlyCollection<Attachment> attachments, bool restart = false)
         {
-            Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
+            await Utils.CheckPermissions(user, PermissionsEnumCommands.Manage);
             try
             {
                 using (var client = new HttpClient())
