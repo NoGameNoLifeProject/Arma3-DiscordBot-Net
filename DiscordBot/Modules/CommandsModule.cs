@@ -156,6 +156,213 @@ namespace DiscordBot.Modules
             }
         }
 
+        [Command("installSteam")]
+        [Summary("Установить SteamCMD")]
+        [RequireContext(ContextType.Guild)]
+        public async Task InstallSteam(params string[] objects)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду installSteam", Context.User);
+                var channel = Context.Channel as IMessageChannel;
+                await ServerCommands.InstallSteamCMD(Context.User as SocketGuildUser, channel);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+
+        [Command("updateServer")]
+        [Summary("Обновить сервер")]
+        [RequireContext(ContextType.Guild)]
+        public async Task UpdateServer(params string[] objects)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду updateServer", Context.User);
+                var channel = Context.Channel as IMessageChannel;
+                await ServerCommands.UpdateServer(Context.User as SocketGuildUser, channel);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+
+        [Command("updateServerMods")]
+        [Summary("Обновить моды сервера")]
+        [RequireContext(ContextType.Guild)]
+        public async Task UpdateServerMods(params string[] objects)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду updateServerMods", Context.User);
+                var channel = Context.Channel as IMessageChannel;
+                await ServerCommands.UpdateServerMods(Context.User as SocketGuildUser, channel);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+
+        [Command("steamLogin")]
+        [Summary("Авторизоваться в steamCMD")]
+        [RequireContext(ContextType.Guild)]
+        public async Task SteamLogin(params string[] objects)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду steamLogin", Context.User);
+                var channel = Context.Channel as IMessageChannel;
+                await ServerCommands.SteamLogin(Context.User as SocketGuildUser, channel, objects.ElementAtOrDefault(0), objects.ElementAtOrDefault(1), objects.ElementAtOrDefault(2));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+
+        [Command("presetUpload")]
+        [Summary("Обновить пресет модов сервера")]
+        [RequireContext(ContextType.Guild)]
+        public async Task PrestUpload(params string[] objects)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду presetUpload", Context.User);
+                var attachments = Context.Message.Attachments;
+                var channel = Context.Channel as IMessageChannel;
+                await ServerCommands.PresetUpdate(Context.User as SocketGuildUser, attachments, channel);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+
+        [Command("deleteUnusedMods")]
+        [Summary("Удаление не используемых модов")]
+        [RequireContext(ContextType.Guild)]
+        public async Task DeleteUnusedMods(params string[] objects)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду deleteUnusedMods", Context.User);
+                await ServerCommands.DeleteUnusedMods(Context.User as SocketGuildUser, Context.Channel);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+
+        [Command("getModsList")]
+        [Summary("Список модов сервера")]
+        [RequireContext(ContextType.Guild)]
+        public async Task GetModsList(params string[] objects)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду getModsList", Context.User);
+                string res = await ServerCommands.GetModsList(Context.User as SocketGuildUser);
+                await ReplyAsync(res);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+
+        [Command("addMod")]
+        [Summary("Добавить мод в пресет")]
+        [RequireContext(ContextType.Guild)]
+        public async Task AddMod(params string[] objects)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду addMod", Context.User);
+                string res = await ServerCommands.AddMod(Context.User as SocketGuildUser, objects.ElementAtOrDefault(0));
+                await ReplyAsync(res);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+
+        [Command("deleteMod")]
+        [Summary("Удалить мод из пресета")]
+        [RequireContext(ContextType.Guild)]
+        public async Task DeleteMod(params string[] objects)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду deleteMod", Context.User);
+                string res = await ServerCommands.AddMod(Context.User as SocketGuildUser, objects.ElementAtOrDefault(0));
+                await ReplyAsync(res);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+
         [Command("try")]
         [RequireContext(ContextType.Guild)]
         public async Task Try(params string[] objects)

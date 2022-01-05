@@ -118,7 +118,7 @@ namespace DiscordBot.Modules.Commands
             embed.AddField($"Причина", reason);
             embed.AddField($"Админ", user.Mention);
 
-            Log.Information("{User} забанил игрока {steamID} \n Окончание блокировки: {(BanTime} \n Причина: {reason} ", user, steamID, (cbanTime.Item1 == 1 ? "Никогда" : cbanTime.Item2.ToString()), reason);
+            Log.Information("{User} забанил игрока {steamID} \n Окончание блокировки: {BanTime} \n Причина: {reason} ", user, steamID, (cbanTime.Item1 == 1 ? "Никогда" : cbanTime.Item2.ToString()), reason);
             return embed.Build();
         }
 

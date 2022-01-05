@@ -43,7 +43,7 @@ namespace DiscordBot
         public async Task MainAsync()
         {
             var builder = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", false, true)
+                .AddJsonFile("appsettings.json", true, true)
                 .Build();
 
             Configuration = builder.GetSection("Config").Get<Config>();

@@ -13,7 +13,7 @@ namespace DiscordBot.Configs
 
         public string A3ProfilesPath { get; set; }
 
-        public string A3ModsPath {  get; set; }
+        public string A3ServerModsPath { get; set; }
 
         public string A3KeysPath {  get; set; }
 
@@ -25,14 +25,12 @@ namespace DiscordBot.Configs
 
         public string A3NetworkConfigName { get; set; }
 
-        public string A3serverBranch { get; set; }
+        public string A3ServerId { get; set; }
 
-        public Dictionary<string, long> Mods { get; set; }
+        public string A3ClientId { get; set; }
 
-        public Dictionary<string, long> ServerMods { get; set; }
+        public List<long> Mods { get; set; }
 
         public string SteamUserLogin { get; set; }
-
-        public string SteamUserPass {  get; set; }
     }
 }
