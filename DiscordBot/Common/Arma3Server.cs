@@ -445,7 +445,7 @@ namespace DiscordBot.Common
                 success = "Успех";
                 try
                 {
-                    Directory.Delete($"{Config.SteamContentPath}{item}");
+                    Directory.Delete($"{Config.SteamContentPath}{item}", true);
                 } catch (Exception ex)
                 {
                     Log.Error(ex, $"Ошибка при удалении мода {name} | {item}");
