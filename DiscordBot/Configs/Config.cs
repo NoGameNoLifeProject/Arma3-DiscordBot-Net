@@ -17,8 +17,6 @@ namespace DiscordBot.Configs
         public string BotStatusServerDisabled { get; set; }
         public int BotStatusUpdateInterval { get; set; }
         public int GoogleSheetsUpdateInterval { get; set; }
-        public string A3serverPath { get; set; }
-        public string A3ServerConfigName { get; set; }
 
         /// <summary>
         ///  Discord role id with full access to the bot commands

@@ -22,6 +22,7 @@ namespace DiscordBot.Common
     {
         private static Arma3Config _config { get; set; }
         public static Process Arma3Process { get; set; }
+        public static Process Arma3HCProcess { get; set; }
 
         public static Arma3Config Config { get => _config ??= BuildConfig(); }
 
@@ -43,7 +44,7 @@ namespace DiscordBot.Common
                     $"-config={Config.A3ServerConfigName} " +
                     $"-mod={string.Join(";", GetModsList())} " +
                     $"-servermod={string.Join(";", GetServerModsList())} " +
-                    $"-world=empty -autoInit -bepath=BattlEye " +
+                    $"{Config.A3ServerLaunchParams} " +
                     $"-port=" + Program.Configuration.ServerGamePort;
                 Log.Information("Starting Arma 3 server {Args}", Arma3Process.StartInfo.Arguments);
                 Arma3Process.Start();
@@ -53,6 +54,7 @@ namespace DiscordBot.Common
                 Log.Error(ex, "Ошибка при запуске сервера");
                 throw new Exception("Ошибка при запуске сервера");
             }
+            StartHeadlessClient();
         }
 
         public static void StopServer()
@@ -60,7 +62,8 @@ namespace DiscordBot.Common
             try
             {
                 WebSocketClient.SocketClose();
-                if (Arma3Process != null) { Arma3Process.Kill(); }
+                if (Arma3Process is not null) { Arma3Process.Kill(); }
+                if (Arma3HCProcess is not null) { Arma3HCProcess.Kill(); }
                 Process[] arma3process = Process.GetProcessesByName("arma3server_x64");
                 foreach (Process process in arma3process)
                 {
@@ -84,6 +87,33 @@ namespace DiscordBot.Common
             StartServer();
         }
 
+        public static void StartHeadlessClient()
+        {
+            Arma3HCProcess = new Process();
+            List<string> tempModsList = new();
+            tempModsList.AddRange(GetModsList());
+            tempModsList.AddRange(GetServerModsList());
+            try
+            {
+                Arma3HCProcess.StartInfo.UseShellExecute = true;
+                Arma3HCProcess.StartInfo.FileName = Config.A3serverPath + "arma3server_x64.exe";
+                Arma3HCProcess.StartInfo.CreateNoWindow = false;
+                Arma3HCProcess.StartInfo.Arguments = $"" +
+                    $"-profiles={Config.A3ProfilesPath} " +
+                    $"-mod={string.Join(";", GetModsList())} " +
+                    $"-servermod={string.Join(";", tempModsList)} " +
+                    $"{Config.A3HCLaunchParams} " +
+                    $"-port=" + Program.Configuration.ServerGamePort;
+                Log.Information("Starting Arma 3 Headless Client {Args}", Arma3HCProcess.StartInfo.Arguments);
+                Arma3HCProcess.Start();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Ошибка при запуске Headless клиента");
+                throw new Exception("Ошибка при запуске Headless клиента");
+            }
+        }
+
         public static void ClearDownloadFolder()
         {
             var files = Directory.GetFiles("Downloads", "*.pbo");
@@ -93,7 +123,7 @@ namespace DiscordBot.Common
                 {
                     try
                     {
-                        File.Move(file, Program.Configuration.A3serverPath + "\\mpmissions\\" + file);
+                        File.Move(file, Config.A3serverPath + "\\mpmissions\\" + file);
                     }
                     catch (Exception ex)
                     {
@@ -113,7 +143,7 @@ namespace DiscordBot.Common
 
         public static List<string> GetAvailableMissions()
         {
-            var files = Directory.GetFiles($"{Program.Configuration.A3serverPath}\\mpmissions\\", "*.pbo");
+            var files = Directory.GetFiles($"{Config.A3serverPath}\\mpmissions\\", "*.pbo");
             var list = new List<string>(files);
             return list;
         }
@@ -134,19 +164,19 @@ namespace DiscordBot.Common
         {
             try
             {
-                File.Move(ms, Program.Configuration.A3serverPath + "\\mpmissions\\" + Path.GetFileName(ms), true);
+                File.Move(ms, Config.A3serverPath + "\\mpmissions\\" + Path.GetFileName(ms), true);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Ошибка при переносе новой миссии");
                 throw new Exception("Ошибка при переносе новой миссии");
             }
-            Log.Information("Загруженная миссия перемещна в по пути {Path}", Program.Configuration.A3serverPath + "\\mpmissions\\" + Path.GetFileName(ms));
+            Log.Information("Загруженная миссия перемещна в по пути {Path}", Config.A3serverPath + "\\mpmissions\\" + Path.GetFileName(ms));
         }
 
         public static void SetMS(string ms)
         {
-            var path = Program.Configuration.A3serverPath + "\\" + Program.Configuration.A3ServerConfigName;
+            var path = Config.A3serverPath + "\\" + Config.A3ServerConfigName;
             List<string> newFile = new List<string>();
             using (StreamReader sr = new StreamReader(path))
             {
