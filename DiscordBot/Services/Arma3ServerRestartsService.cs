@@ -3,9 +3,8 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DiscordBot.Services
 {
@@ -15,23 +14,25 @@ namespace DiscordBot.Services
         public void Initialize()
         {
             RestartTimes = Arma3Server.Config.A3ServerRestarts.Split(';').ToList();
-            var serverRestartTimer = Observable.Timer(TimeSpan.Zero, TimeSpan.FromSeconds(10)).Timestamp();
-            serverRestartTimer.Subscribe(x => CheckRestartTime());
-        }
-
-        public void CheckRestartTime()
-        {
-            var curTime = DateTime.Now.ToString("HH:mm");
             foreach (var time in RestartTimes)
             {
-                if (time.CompareTo(curTime) == 0)
-                {
-                    Log.Information("Список времени рестартов: {RestartTimes}", RestartTimes);
-                    Log.Information("Время текущего рестарта: {curTime}", curTime);
-                    Arma3Server.RestartServer();
-                }
+                CreateScheduledRestart(DateTimeOffset.Parse(time));
             }
-            
+        }
+
+        public void CreateScheduledRestart(DateTimeOffset dateTimeOffset)
+        {
+            Scheduler.Default.Schedule(dateTimeOffset,
+                () => {
+                    CreateScheduledRestart(dateTimeOffset.AddDays(1));
+                    if (dateTimeOffset < DateTimeOffset.Now.AddMinutes(-1))
+                    {
+                        return;
+                    }
+                    Log.Information("Запланированные рестарты: {RestartTimes}", RestartTimes);
+                    Log.Information("Запускаем запланированый рестарт");
+                    Arma3Server.RestartServer();
+                });
         }
     }
 }

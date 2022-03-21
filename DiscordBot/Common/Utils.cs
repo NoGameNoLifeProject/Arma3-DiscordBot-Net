@@ -36,7 +36,7 @@ namespace DiscordBot.Common
                 }
             } catch (Exception ex)
             {
-                Log.Warning(ex, "Ошибка при попытки определить владельца процесса");
+                Log.Warning(ex, "Ошибка при попытке определить владельца процесса");
             }
 
             return null;
