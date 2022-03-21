@@ -35,6 +35,8 @@ namespace DiscordBot.Configs
         
         public bool UseHClient { get; set; }
 
+        public string A3ServerRestarts { get; set; }
+
         public List<long> Mods { get; set; }
 
         public string SteamUserLogin { get; set; }

@@ -22,7 +22,10 @@ namespace DiscordBot.Services
                 var resp = await _http.GetAsync(@"https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\gameaddr\" + Program.Configuration.ServerAdress + ":" + Program.Configuration.ServerGamePort + "&key=" + Program.Configuration.SteamAuthToken);
                 var content = await resp.Content.ReadAsStringAsync();
                 var json = JsonConvert.DeserializeObject<Dictionary<string, Response>>(content);
-                return json["response"].servers[0];
+                if (json["response"].servers.Count > 0)
+                    return json["response"].servers[0];
+                else
+                    return new Server();
             } catch (Exception e)
             {
                 Log.Warning("Ошибка при выполнении запроса к Steam API {Error}", e.Message);
