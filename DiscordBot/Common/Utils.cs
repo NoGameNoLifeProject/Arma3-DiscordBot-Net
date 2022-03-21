@@ -11,6 +11,7 @@ using System.Management;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using Serilog;
 
 namespace DiscordBot.Common
 {
@@ -18,21 +19,27 @@ namespace DiscordBot.Common
     {
         public static string GetProcessOwner(int processId)
         {
-            string query = "Select * From Win32_Process Where ProcessID = " + processId;
-            ManagementObjectSearcher searcher = new(query);
-            ManagementObjectCollection processList = searcher.Get();
-
-            foreach (ManagementObject obj in processList)
+            try
             {
-                string[] argList = new string[] { string.Empty, string.Empty };
-                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
-                if (returnVal == 0)
+                string query = "Select * From Win32_Process Where ProcessID = " + processId;
+                ManagementObjectSearcher searcher = new(query);
+                ManagementObjectCollection processList = searcher.Get();
+
+                foreach (ManagementObject obj in processList)
                 {
-                    return argList[1] + "\\" + argList[0];
+                    string[] argList = new string[] { string.Empty, string.Empty };
+                    int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                    if (returnVal == 0)
+                    {
+                        return argList[1] + "\\" + argList[0];
+                    }
                 }
+            } catch (Exception ex)
+            {
+                Log.Warning(ex, "Ошибка при попытки определить владельца процесса");
             }
 
-            return "NO OWNER";
+            return null;
         }
 
         public static void AddOrUpdateAppSetting<T>(string key1, string key2, T value)

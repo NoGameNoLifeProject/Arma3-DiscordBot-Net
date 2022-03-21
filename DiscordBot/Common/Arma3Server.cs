@@ -70,7 +70,7 @@ namespace DiscordBot.Common
                 foreach (Process process in arma3process)
                 {
                     var pOwner = Utils.GetProcessOwner(process.Id);
-                    if (pOwner != null && pOwner == CurProcessOwner)
+                    if (pOwner is not null && pOwner == CurProcessOwner)
                     {
                         process.Kill();
                     }
