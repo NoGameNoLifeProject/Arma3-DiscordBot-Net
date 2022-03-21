@@ -32,6 +32,8 @@ namespace DiscordBot.Configs
         public string A3ServerLaunchParams { get; set; }
 
         public string A3HCLaunchParams { get; set; }
+        
+        public bool UseHClient { get; set; }
 
         public List<long> Mods { get; set; }
 

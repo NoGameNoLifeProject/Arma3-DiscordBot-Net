@@ -54,7 +54,9 @@ namespace DiscordBot.Common
                 Log.Error(ex, "Ошибка при запуске сервера");
                 throw new Exception("Ошибка при запуске сервера");
             }
-            StartHeadlessClient();
+            
+            if (Config.UseHClient)
+                StartHeadlessClient();
         }
 
         public static void StopServer()
@@ -351,7 +353,6 @@ namespace DiscordBot.Common
                                 var modIdLong = long.Parse(modId);
                                 var modName = GetModNameById(modIdLong);
                                 downloadedMods.Add(modIdLong);
-                                var newModName = "@" + modName.Replace(" ", "_").ToLower();
                                 Log.Information("[SteamCMD] Mod {Name} Downloaded {Output}", modName, line);
                                 if (message.Content.Length > 1800) {
                                     messageContent = $"Мод {modName}|{modId} успешно загружен";
@@ -369,7 +370,7 @@ namespace DiscordBot.Common
                         instance.SteamExited += (sender, steamExit) =>
                         {
                             var error = downloadedMods.Except(Config.Mods);
-                            if (error is not null && error.Count() > 0)
+                            if (error.Any())
                             {
                                 foreach (var mod in error)
                                 {
