@@ -23,7 +23,7 @@ namespace DiscordBot.Modules.Commands
             WebSocketClient.UpdateZeus(steamID, "1");
 
             Log.Information("{User} выдал zeus игроку {steamID}", user, steamID);
-            return $"Игроку {steamID} успешно выдан zeus";
+            return $"Игроку {steamID} успешно выдан zeus" + (temp ? " (Временно)" : "");
         }
 
         public static async Task<string> ZeusRemove(SocketGuildUser user, string steamID)
@@ -62,7 +62,7 @@ namespace DiscordBot.Modules.Commands
             WebSocketClient.UpdateInfiSTAR(steamID, rank);
 
             Log.Information("{User} выдал infiSTAR игроку {steamID}, Уровень = {rank}", user, steamID, rank);
-            return $"Игроку {steamID} успешно выдан infiSTAR, Уровень = {rank}";
+            return $"Игроку {steamID} успешно выдан infiSTAR, Уровень = {rank}" + (temp ? " (Временно)" : "");
         }
 
         public static async Task<string> InfistarRemove(SocketGuildUser user, string steamID)

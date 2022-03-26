@@ -130,6 +130,13 @@ namespace DiscordBot.Modules
                         .WithDescription("Выдать Zeus по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
                         .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("temp")
+                            .WithDescription("Выдать временно")
+                            .AddChoice("Да", bool.TrueString)
+                            .AddChoice("Нет", bool.FalseString)
+                            .WithType(ApplicationCommandOptionType.String)
+                        )
                     ).AddOption(new SlashCommandOptionBuilder()
                         .WithName("remove")
                         .WithDescription("Забрать Zeus по SteamID")
@@ -150,6 +157,13 @@ namespace DiscordBot.Modules
                         .WithType(ApplicationCommandOptionType.SubCommand)
                         .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
                         .AddOption("rank", ApplicationCommandOptionType.String, "Уровень infiSTAR", required: false)
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("temp")
+                            .WithDescription("Выдать временно")
+                            .AddChoice("Да", bool.TrueString)
+                            .AddChoice("Нет", bool.FalseString)
+                            .WithType(ApplicationCommandOptionType.String)
+                        )
                     ).AddOption(new SlashCommandOptionBuilder()
                         .WithName("remove")
                         .WithDescription("Забрать intiSTAR по SteamID")
@@ -323,7 +337,7 @@ namespace DiscordBot.Modules
                         switch (commandSubName)
                         {
                             case "give":
-                                res = await PlayerCommands.ZeusGive(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"));
+                                res = await PlayerCommands.ZeusGive(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"), bool.Parse(commandSubValues.GetValueOrDefault("temp")));
                                 await command.RespondAsync(res);
                                 break;
                             case "remove":
@@ -342,7 +356,8 @@ namespace DiscordBot.Modules
                             case "give":
                                 res = await PlayerCommands.InfistarGive(command.User as SocketGuildUser,
                                     commandSubValues.GetValueOrDefault("steamid"),
-                                    commandSubValues.GetValueOrDefault("rank", "1")
+                                    commandSubValues.GetValueOrDefault("rank", "1"),
+                                    bool.Parse(commandSubValues.GetValueOrDefault("temp"))
                                     );
                                 await command.RespondAsync(res);
                                 break;
