@@ -92,55 +92,46 @@ namespace DiscordBot.Modules.Commands
                 }
             }
 
-            if (user.Id == ApplicationOwnerID)
-                return;
-
-            bool manage = false;
+            //if (user.Id == ApplicationOwnerID)
+            //    return;
+            
             foreach (var role in user.Roles)
             {
-                if (Program.Configuration.DiscordManageRoleId.Contains(role.Id))
+                if (Program.Configuration.RoleAccess.ContainsKey(role.Id.ToString()))
                 {
-                    manage = true;
-                }
-            }
-
-            switch (permissions)
-            {
-                case PermissionsEnumCommands.Manage:
-                    if (manage)
-                        return;
-                    break;
-                case PermissionsEnumCommands.Restart:
-                    if (manage)
-                        return;
-                    foreach (var role in user.Roles)
+                    var userPermissions = Program.Configuration.RoleAccess[role.Id.ToString()];
+                    switch (permissions)
                     {
-                        if (Program.Configuration.DiscordServerRestartRoleId.Contains(role.Id))
-                        {
-                            return;
-                        }
+                        case PermissionsEnumCommands.Manage:
+                            if (userPermissions.Manage)
+                                return;
+                            break;
+                        case PermissionsEnumCommands.Restart:
+                            if (userPermissions.Manage || userPermissions.Restart)
+                                return;
+                            break;
+                        case PermissionsEnumCommands.Ban:
+                            if (userPermissions.Manage || userPermissions.Ban)
+                                return;
+                            break;
+                        case PermissionsEnumCommands.UnBan:
+                            if (userPermissions.Manage || userPermissions.UnBan)
+                                return;
+                            break;
+                        case PermissionsEnumCommands.Kick:
+                            if (userPermissions.Manage || userPermissions.Ban || userPermissions.Kick)
+                                return;
+                            break;
+                        case PermissionsEnumCommands.Zeus:
+                            if (userPermissions.Manage || userPermissions.Zeus)
+                                return;
+                            break;
+                        case PermissionsEnumCommands.Infistar:
+                            if (userPermissions.Manage || userPermissions.Infistar)
+                                return;
+                            break;
                     }
-                    break;
-                case PermissionsEnumCommands.Ban:
-                    if (manage || user.GuildPermissions.BanMembers)
-                        return;
-                    break;
-                case PermissionsEnumCommands.UnBan:
-                    if (manage || user.GuildPermissions.BanMembers)
-                        return;
-                    break;
-                case PermissionsEnumCommands.Kick:
-                    if (manage || user.GuildPermissions.BanMembers || user.GuildPermissions.KickMembers)
-                        return;
-                    break;
-                case PermissionsEnumCommands.Zeus:
-                    if (manage)
-                        return;
-                    break;
-                case PermissionsEnumCommands.Infistar:
-                    if (manage)
-                        return;
-                    break;
+                }
             }
 
             throw new UnauthorizedAccessException("Недостаточно прав для использования команды");

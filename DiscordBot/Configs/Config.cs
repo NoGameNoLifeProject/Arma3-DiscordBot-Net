@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DiscordBot.Common.Entities;
 
 namespace DiscordBot.Configs
 {
@@ -17,16 +18,11 @@ namespace DiscordBot.Configs
         public string BotStatusServerDisabled { get; set; }
         public int BotStatusUpdateInterval { get; set; }
         public int GoogleSheetsUpdateInterval { get; set; }
-
+        
         /// <summary>
-        ///  Discord role id with full access to the bot commands
+        ///  Discord access by individual rights for each role
         /// </summary>
-        public List<ulong> DiscordManageRoleId { get; set; }
-
-        /// <summary>
-        ///  Discord role id with access to restart command
-        /// </summary>
-        public List<ulong> DiscordServerRestartRoleId { get; set; }
+        public Dictionary<string, UserPermissions> RoleAccess { get; set; }
 
         /// <summary>
         ///  Do the admin rights give full access to the bot commands

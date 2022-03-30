@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using DiscordBot.Attributes;
 using DiscordBot.Common;
 using DiscordBot.Configs;
 using DiscordBot.Modules.Commands;

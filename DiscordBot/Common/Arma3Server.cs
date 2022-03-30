@@ -31,6 +31,8 @@ namespace DiscordBot.Common
 
         public static void StartServer()
         {
+            if (IsServerRunning())
+                throw new Exception("Сервер уже запущен");
             UpdateMission();
             Arma3Process = new Process();
             try
@@ -59,6 +61,17 @@ namespace DiscordBot.Common
                 StartHeadlessClient();
         }
 
+        public static bool IsServerRunning()
+        {
+            if (Arma3Process is not null)
+                return true;
+            if (Arma3HCProcess is not null)
+                return true;
+            
+            var arma3process = Process.GetProcessesByName("arma3server_x64");
+            return arma3process.Select(process => Utils.GetProcessOwner(process.Id)).Any(pOwner => pOwner is not null && pOwner == CurProcessOwner);
+        }
+
         public static void StopServer()
         {
             try
@@ -66,7 +79,7 @@ namespace DiscordBot.Common
                 WebSocketClient.SocketClose();
                 if (Arma3Process is not null) { Arma3Process.Kill(); }
                 if (Arma3HCProcess is not null) { Arma3HCProcess.Kill(); }
-                Process[] arma3process = Process.GetProcessesByName("arma3server_x64");
+                var arma3process = Process.GetProcessesByName("arma3server_x64");
                 foreach (Process process in arma3process)
                 {
                     var pOwner = Utils.GetProcessOwner(process.Id);
