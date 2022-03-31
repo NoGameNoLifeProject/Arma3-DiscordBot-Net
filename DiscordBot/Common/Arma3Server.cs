@@ -63,11 +63,6 @@ namespace DiscordBot.Common
 
         public static bool IsServerRunning()
         {
-            if (Arma3Process is not null)
-                return true;
-            if (Arma3HCProcess is not null)
-                return true;
-            
             var arma3process = Process.GetProcessesByName("arma3server_x64");
             return arma3process.Select(process => Utils.GetProcessOwner(process.Id)).Any(pOwner => pOwner is not null && pOwner == CurProcessOwner);
         }
