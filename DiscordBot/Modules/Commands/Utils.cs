@@ -93,8 +93,8 @@ namespace DiscordBot.Modules.Commands
                 }
             }
 
-            //if (user.Id == ApplicationOwnerID)
-            //    return;
+            if (user.Id == ApplicationOwnerID)
+                return;
             
             foreach (var role in user.Roles)
             {

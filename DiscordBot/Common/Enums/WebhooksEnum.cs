@@ -6,5 +6,6 @@ public enum WebhooksEnum
     ModsUpdates,
     Restarts,
     Infistar,
-    Zeus
+    Zeus,
+    Chat
 }

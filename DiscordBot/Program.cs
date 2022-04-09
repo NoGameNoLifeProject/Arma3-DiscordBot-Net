@@ -9,6 +9,7 @@ using Discord.Commands;
 using DiscordBot.Services;
 using DiscordBot.Configs;
 using System.Reactive.Linq;
+using DiscordBot.Common;
 using DiscordBot.GoogleSheets;
 using Microsoft.Extensions.Configuration;
 using DiscordBot.Modules;
@@ -70,6 +71,7 @@ namespace DiscordBot
 
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
                 services.GetRequiredService<Arma3ServerRestartsService>().Initialize();
+                WebSocketClient.Initialize();
 
                 var botStatusTimer = Observable.Timer(TimeSpan.Zero, TimeSpan.FromSeconds(Configuration.BotStatusUpdateInterval)).Timestamp();
                 botStatusTimer.Subscribe(x => SetBotStatus(Client));

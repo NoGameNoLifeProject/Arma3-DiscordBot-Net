@@ -18,6 +18,7 @@ public static class WebhooksNotifier
     public static WebhooksConfig Config { get => _config ??= BuildConfig(); }
 
     private static readonly DiscordWebhookClient MainClient = new (Config.MainWebhook);
+    private static readonly DiscordWebhookClient ChatClient = new (Config.ChatWebhook);
     private static readonly DiscordWebhookClient ModsUpdatesClient = new (Config.ModsUpdatesWebhook);
     private static readonly DiscordWebhookClient RestartsClient = new (Config.RestartsWebhook);
     private static readonly DiscordWebhookClient InfistarClient = new (Config.InfistarWebhook);
@@ -38,6 +39,8 @@ public static class WebhooksNotifier
                 return await InfistarClient.SendMessageAsync(message, embeds: embeds);
             case WebhooksEnum.Zeus:
                 return await ZeusClient.SendMessageAsync(message, embeds: embeds);
+            case WebhooksEnum.Chat:
+                return await ChatClient.SendMessageAsync(message, embeds: embeds);
             default:
                 throw new ArgumentOutOfRangeException(nameof(webhook), webhook, null);
         }
@@ -62,6 +65,9 @@ public static class WebhooksNotifier
             case WebhooksEnum.Zeus:
                 await ZeusClient.DeleteMessageAsync(messageId);
                 break;
+            case WebhooksEnum.Chat:
+                await ChatClient.DeleteMessageAsync(messageId);
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(webhook), webhook, null);
         }
@@ -85,6 +91,9 @@ public static class WebhooksNotifier
                 break;
             case WebhooksEnum.Zeus:
                 await ZeusClient.ModifyMessageAsync(messageId, properties);
+                break;
+            case WebhooksEnum.Chat:
+                await ChatClient.ModifyMessageAsync(messageId, properties);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(webhook), webhook, null);

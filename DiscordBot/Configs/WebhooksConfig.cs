@@ -9,4 +9,5 @@ public class WebhooksConfig
     public string InfistarWebhook { get; set; }
     public string ZeusWebhook { get; set; }
     public string MainWebhook { get; set; }
+    public string ChatWebhook { get; set; }
 }

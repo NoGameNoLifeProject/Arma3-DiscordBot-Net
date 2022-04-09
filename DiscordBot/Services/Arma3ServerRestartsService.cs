@@ -13,6 +13,7 @@ namespace DiscordBot.Services
         private List<string> RestartTimes = new();
         public void Initialize()
         {
+            if (string.IsNullOrWhiteSpace(Arma3Server.Config.A3ServerRestarts)) return;
             RestartTimes = Arma3Server.Config.A3ServerRestarts.Split(';').ToList();
             foreach (var time in RestartTimes)
             {
