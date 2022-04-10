@@ -31,8 +31,6 @@ namespace DiscordBot.Common
 
         public static void StartServer()
         {
-            if (IsServerRunning())
-                throw new Exception("Сервер уже запущен");
             UpdateMission();
             Arma3Process = new Process();
             try
