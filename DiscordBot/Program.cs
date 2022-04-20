@@ -71,6 +71,7 @@ namespace DiscordBot
 
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
                 services.GetRequiredService<Arma3ServerRestartsService>().Initialize();
+                services.GetRequiredService<Arma3PlayersOnlineService>().Initialize();
                 WebSocketClient.Initialize();
 
                 var botStatusTimer = Observable.Timer(TimeSpan.Zero, TimeSpan.FromSeconds(Configuration.BotStatusUpdateInterval)).Timestamp();
@@ -109,6 +110,7 @@ namespace DiscordBot
                 .AddSingleton<HttpClient>()
                 .AddSingleton<ServerStatusService>()
                 .AddSingleton<Arma3ServerRestartsService>()
+                .AddSingleton<Arma3PlayersOnlineService>()
                 .BuildServiceProvider();
         }
     }

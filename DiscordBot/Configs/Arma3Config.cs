@@ -40,5 +40,7 @@ namespace DiscordBot.Configs
         public List<long> Mods { get; set; }
 
         public string SteamUserLogin { get; set; }
+        
+        public int A3PlayersOnlineUpdateInterval { get; set; }
     }
 }

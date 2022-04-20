@@ -26,29 +26,35 @@ namespace DiscordBot.Common
             socketTimer.Subscribe(x => SocketConnect());
         }
 
+        public static void Send(string data)
+        {
+            if (Socket is not null && Socket.IsAlive)
+                Socket.Send(data);
+        }
+
         public static void UpdateZeus(string steamID, string state)
         {
             var dict = new Dictionary<string, string>() { {"Command", "UpdateZeus" }, { "SteamID", steamID }, { "State", state } };
-            Task.Run(() => Socket.Send(JsonConvert.SerializeObject(dict)));
+            Task.Run(() => Send(JsonConvert.SerializeObject(dict)));
         }
 
         public static void UpdateInfiSTAR(string steamID, string state)
         {
             var dict = new Dictionary<string, string>() { { "Command", "UpdateInfiSTAR" }, { "SteamID", steamID }, { "State", state } };
-            Task.Run(() => Socket.Send(JsonConvert.SerializeObject(dict)));
+            Task.Run(() => Send(JsonConvert.SerializeObject(dict)));
         }
 
         public static void BanPlayer(string steamID, DateTime endTime, string reason)
         {
             var timestamp = endTime - DateTime.Now;
             var dict = new Dictionary<string, string>() { { "Command", "BanPlayer" }, { "SteamID", steamID }, { "BanTime", timestamp.ToString(@"dd\:hh\:mm\:ss") }, { "Reason", reason } };
-            Task.Run(() => Socket.Send(JsonConvert.SerializeObject(dict)));
+            Task.Run(() => Send(JsonConvert.SerializeObject(dict)));
         }
 
         public static void KickPlayer(string steamID, string reason)
         {
             var dict = new Dictionary<string, string>() { { "Command", "KickPlayer" }, { "SteamID", steamID }, { "BanTime", "" }, { "Reason", reason } };
-            Task.Run(() => Socket.Send(JsonConvert.SerializeObject(dict)));
+            Task.Run(() => Send(JsonConvert.SerializeObject(dict)));
         }
 
         private static async Task IncomeMessage(object? sender, MessageEventArgs e)

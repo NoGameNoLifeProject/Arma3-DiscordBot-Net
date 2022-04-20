@@ -19,5 +19,7 @@ namespace DiscordBot.Common.Entities
         public int Zeus { get; set; }
 
         public int Infistar { get; set; }
+        
+        public long Discord { get; set; }
     }
 }

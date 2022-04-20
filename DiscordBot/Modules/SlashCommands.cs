@@ -130,6 +130,7 @@ namespace DiscordBot.Modules
                         .WithDescription("Выдать Zeus по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
                         .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
+                        .AddOption("user", ApplicationCommandOptionType.User, "Discord игрока", required: true)
                         .AddOption(new SlashCommandOptionBuilder()
                             .WithName("temp")
                             .WithDescription("Выдать временно")
@@ -156,6 +157,7 @@ namespace DiscordBot.Modules
                         .WithDescription("Выдать intiSTAR по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
                         .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
+                        .AddOption("user", ApplicationCommandOptionType.User, "Discord игрока", required: true)
                         .AddOption("rank", ApplicationCommandOptionType.String, "Уровень infiSTAR", required: false)
                         .AddOption(new SlashCommandOptionBuilder()
                             .WithName("temp")
@@ -327,6 +329,7 @@ namespace DiscordBot.Modules
                 var commandName = command.Data.Options.First().Name;
                 var commandSubName = command.Data.Options.First().Options.First().Name;
                 var commandSubValues = command.Data.Options.First().Options.First().Options?.ToDictionary(x => x.Name, x => x.Value.ToString());
+                var commandSubValuesTest = command.Data.Options.First().Options.First().Options;
 
                 Log.Information("{User} использовал комманду player {commandName} {commandSubName}", command.User, commandName, commandSubName);
                 string res;
@@ -337,7 +340,10 @@ namespace DiscordBot.Modules
                         switch (commandSubName)
                         {
                             case "give":
-                                res = await PlayerCommands.ZeusGive(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"), bool.Parse(commandSubValues.GetValueOrDefault("temp")));
+                                var user = commandSubValuesTest.FirstOrDefault(x => x.Name == "user")?.Value as IGuildUser;
+                                var tempValue = commandSubValuesTest.FirstOrDefault(x => x.Name == "temp")?.Value.ToString();
+                                var temp = tempValue != null && bool.Parse(tempValue);
+                                res = await PlayerCommands.ZeusGive(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("steamid"), user, temp);
                                 await command.RespondAsync(res);
                                 break;
                             case "remove":
@@ -354,10 +360,14 @@ namespace DiscordBot.Modules
                         switch (commandSubName)
                         {
                             case "give":
+                                var user = commandSubValuesTest.FirstOrDefault(x => x.Name == "user")?.Value as IGuildUser;
+                                var tempValue = commandSubValuesTest.FirstOrDefault(x => x.Name == "temp")?.Value;
+                                var temp = tempValue != null && (bool)tempValue;
                                 res = await PlayerCommands.InfistarGive(command.User as SocketGuildUser,
                                     commandSubValues.GetValueOrDefault("steamid"),
+                                    user,
                                     commandSubValues.GetValueOrDefault("rank", "1"),
-                                    bool.Parse(commandSubValues.GetValueOrDefault("temp"))
+                                    temp
                                     );
                                 await command.RespondAsync(res);
                                 break;

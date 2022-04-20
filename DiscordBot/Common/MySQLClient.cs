@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 using DiscordBot.Configs;
 using Microsoft.Extensions.Configuration;
 using Dapper;
+using Discord;
 using DiscordBot.Common.Entities;
 using MySqlConnector;
+using Dasync.Collections;
 
 namespace DiscordBot.Common
 {
@@ -19,19 +21,25 @@ namespace DiscordBot.Common
         public static MySQLConfig Config { get => _config ??= BuildConfig(); }
         public static string ConnectionString { get { return _connectionString ?? GenConnectionString(); } }
 
-        public static void UpdateZeus(long steamID, int state)
+        public static void UpdateZeus(long steamID, int state, IGuildUser player = null)
         {
             using (var connection = new MySqlConnection(ConnectionString))
             {
-                connection.Query($"Insert into Players (SteamID, Zeus) Values({steamID}, {state}) on duplicate key update Zeus = {state}");
+                if (player is not null)
+                    connection.Query($"Insert into Players (SteamID, Zeus, Discord) Values({steamID}, {state}, {player.Id}) on duplicate key update Zeus = {state}, Discord = {player.Id}");
+                else
+                    connection.Query($"Insert into Players (SteamID, Zeus) Values({steamID}, {state}) on duplicate key update Zeus = {state}");
             }
         }
 
-        public static void UpdateInfiSTAR(long steamID, int state)
+        public static void UpdateInfiSTAR(long steamID, int state, IGuildUser player = null)
         {
             using (var connection = new MySqlConnection(ConnectionString))
             {
-                connection.Query($"Insert into Players (SteamID, Infistar) Values({steamID}, {state}) on duplicate key update Infistar = {state}");
+                if (player is not null)
+                    connection.Query($"Insert into Players (SteamID, Infistar, Discord) Values({steamID}, {state}, {player.Id}) on duplicate key update Infistar = {state}, Discord = {player.Id}");
+                else
+                    connection.Query($"Insert into Players (SteamID, Infistar) Values({steamID}, {state}) on duplicate key update Infistar = {state}");
             }
         }
 
@@ -87,6 +95,51 @@ namespace DiscordBot.Common
                     throw new Exception("Не найдено ни одного игрока, уточните ник");
 
                 return result.First().SteamID;
+            }
+        }
+
+        public static async Task UpdatePlayersOnline(List<SteamQueryNet.Models.Player> players)
+        {
+            using (var connection = new MySqlConnection(ConnectionString))
+            {
+                var data = connection.Query($"select ProfileName, SteamID from Players_Profiles where ProfileName in @Names GROUP BY SteamID", new { Names = players.Select(x => x.Name)}).ToDictionary(
+                    row => (string)row.ProfileName,
+                    row => (long)row.SteamID);
+
+                foreach (var player in players)
+                {
+                    var steamId = data.GetValueOrDefault(player.Name);
+                    if (steamId != 0)
+                    {
+                        await connection.QueryAsync(
+                            $"Insert into Players_Online (SteamID, Date, Time) Values({steamId}, CURDATE(), {player.Duration}) on duplicate key update Time = Time + {Arma3Server.Config.A3PlayersOnlineUpdateInterval}");
+                    }
+                }
+
+            }
+        }
+
+        public static async Task<List<PlayersOnlineFull>> GetPlayersOnline(DateTimeOffset fromDate, bool admins = false, bool curators = false)
+        {
+            await using (var connection = new MySqlConnection(ConnectionString))
+            {
+                List<PlayersOnlineFull> players = new();
+                if (admins)
+                {
+                    players = connection.Query<PlayersOnlineFull>(
+                        "select p.*, po.Date, po.Time from Players p inner join Players_Online po on (p.SteamID = po.SteamID) where po.Date > @FromDate and p.Infistar > 1", new {FromDate = fromDate}).ToList();
+                } else if (curators)
+                {
+                    players = connection.Query<PlayersOnlineFull>(
+                        "select p.*, po.Date, po.Time from Players p inner join Players_Online po on (p.SteamID = po.SteamID) where po.Date > @FromDate and p.Zeus = 1", new {FromDate = fromDate}).ToList();
+                }
+                else
+                {
+                    players = connection.Query<PlayersOnlineFull>(
+                        "select p.*, po.Date, po.Time from Players p inner join Players_Online po on (p.SteamID = po.SteamID) where po.Date > @FromDate", new {FromDate = fromDate}).ToList();
+                }
+
+                return players.ToList();
             }
         }
 

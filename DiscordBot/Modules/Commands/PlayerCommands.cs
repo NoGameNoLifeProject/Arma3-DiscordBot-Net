@@ -14,13 +14,13 @@ namespace DiscordBot.Modules.Commands
 {
     public static class PlayerCommands
     {
-        public static async Task<string> ZeusGive(SocketGuildUser user, string steamID, bool temp = false)
+        public static async Task<string> ZeusGive(SocketGuildUser user, string steamID, IGuildUser player = null, bool temp = false)
         {
             Guard.Argument(steamID, nameof(steamID)).NotNull().Length(17);
             await Utils.CheckPermissions(user, PermissionsEnumCommands.Zeus);
             var steamIDlong = Utils.ConvertLong(steamID);
             if (!temp)
-                MySQLClient.UpdateZeus(steamIDlong, 1);
+                MySQLClient.UpdateZeus(steamIDlong, 1, player);
             WebSocketClient.UpdateZeus(steamID, "1");
 
             Log.Information("{User} выдал zeus игроку {steamID}", user, steamID);
@@ -47,11 +47,11 @@ namespace DiscordBot.Modules.Commands
             embed.Timestamp = DateTime.Now;
             embed.WithTitle($"Список пользователей с Zeus");
             embed.WithColor(Color.Blue);
-            embed.WithDescription(string.Join("\n", players.Select(p => { return p.SteamName + " - " + p.SteamID.ToString(); })));
+            embed.WithDescription(string.Join("\n", players.Select(p => { return (p.Discord != 0 ? $"<@{p.Discord}>" : "") + $" - {p.SteamName} - {p.SteamID.ToString()}"; })));
             return embed.Build();
         }
 
-        public static async Task<string> InfistarGive(SocketGuildUser user, string steamID, string rank = "1", bool temp = false)
+        public static async Task<string> InfistarGive(SocketGuildUser user, string steamID, IGuildUser player = null, string rank = "1", bool temp = false)
         {
             Guard.Argument(steamID, nameof(steamID)).NotNull().Length(17);
             Guard.Argument(rank, nameof(rank)).NotEmpty();
@@ -59,7 +59,7 @@ namespace DiscordBot.Modules.Commands
             var steamIDlong = Utils.ConvertLong(steamID);
             var ranklong = Utils.ConvertInt(rank);
             if (!temp)
-                MySQLClient.UpdateInfiSTAR(steamIDlong, ranklong);
+                MySQLClient.UpdateInfiSTAR(steamIDlong, ranklong, player);
             WebSocketClient.UpdateInfiSTAR(steamID, rank);
 
             Log.Information("{User} выдал infiSTAR игроку {steamID}, Уровень = {rank}", user, steamID, rank);
@@ -89,7 +89,7 @@ namespace DiscordBot.Modules.Commands
             embed.WithColor(Color.Red);
             foreach (var group in groups)
             {
-                embed.AddField($"Rank {group.Key}", string.Join("\n", group.Select(p => { return p.SteamName + " - " + p.SteamID.ToString(); })));
+                embed.AddField($"Rank {group.Key}", string.Join("\n", group.Select(p => { return (p.Discord != 0 ? $"<@{p.Discord}>" : "") + $" - {p.SteamName} - {p.SteamID.ToString()}"; })));
             }
             return embed.Build();
         }

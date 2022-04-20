@@ -418,7 +418,7 @@ namespace DiscordBot.Modules
                 var state = objects.ElementAtOrDefault(1);
                 var temp = objects.ElementAtOrDefault(2) == "true" ? true : false;
                 if (string.IsNullOrEmpty(state) || state == "1")
-                    await ReplyAsync(await PlayerCommands.ZeusGive(Context.User as SocketGuildUser, steamID, temp));
+                    await ReplyAsync(await PlayerCommands.ZeusGive(Context.User as SocketGuildUser, steamID, temp: temp));
                 else
                     await ReplyAsync(await PlayerCommands.ZeusRemove(Context.User as SocketGuildUser, steamID));
             }
@@ -448,7 +448,7 @@ namespace DiscordBot.Modules
                 if (string.IsNullOrEmpty(rank))
                     await ReplyAsync(await PlayerCommands.InfistarRemove(Context.User as SocketGuildUser, steamID));
                 else
-                    await ReplyAsync(await PlayerCommands.InfistarGive(Context.User as SocketGuildUser, steamID, rank, temp));
+                    await ReplyAsync(await PlayerCommands.InfistarGive(Context.User as SocketGuildUser, steamID, rank: rank, temp: temp));
             }
             catch (UnauthorizedAccessException ex)
             {
