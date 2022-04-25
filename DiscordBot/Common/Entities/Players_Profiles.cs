@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DiscordBot.Common.Entities
+﻿namespace DiscordBot.Common.Entities
 {
     public class Players_Profiles
     {

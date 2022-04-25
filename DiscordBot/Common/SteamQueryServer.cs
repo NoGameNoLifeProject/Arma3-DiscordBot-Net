@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using SteamQueryNet.Interfaces;
 using SteamQueryNet.Models;
 using SteamQueryNet;
-using DiscordBot.Configs;
 
 namespace DiscordBot.Common
 {

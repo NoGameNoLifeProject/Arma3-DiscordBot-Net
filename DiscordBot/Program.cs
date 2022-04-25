@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,9 +11,14 @@ using DiscordBot.Services;
 using DiscordBot.Configs;
 using System.Reactive.Linq;
 using DiscordBot.Common;
-using DiscordBot.GoogleSheets;
 using Microsoft.Extensions.Configuration;
 using DiscordBot.Modules;
+using DiscordBot.Services.Artwork;
+using Lavalink4NET;
+using Lavalink4NET.Cluster;
+using Lavalink4NET.DiscordNet;
+using Lavalink4NET.MemoryCache;
+using Lavalink4NET.Tracking;
 using Serilog;
 
 namespace DiscordBot
@@ -21,6 +27,9 @@ namespace DiscordBot
     {
         public static Config Configuration {  get; set; }
         public static DiscordSocketClient Client { get; private set; }
+        public static IAudioService AudioService { get; private set; }
+
+        private static MusicService _musicService;
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -56,12 +65,13 @@ namespace DiscordBot
 
             var botConfig = new DiscordSocketConfig()
             {
-                GatewayIntents = GatewayIntents.GuildMembers | GatewayIntents.GuildMessages | GatewayIntents.GuildMessageTyping | GatewayIntents.Guilds
+                GatewayIntents = GatewayIntents.GuildMembers | GatewayIntents.GuildMessages | GatewayIntents.GuildMessageTyping | GatewayIntents.Guilds | GatewayIntents.GuildVoiceStates
             };
 
             using (var services = ConfigureServices(botConfig))
             {
                 Client = services.GetRequiredService<DiscordSocketClient>();
+                AudioService = services.GetRequiredService<IAudioService>();
 
                 Client.Log += LogAsync;
                 services.GetRequiredService<CommandService>().Log += LogAsync;
@@ -72,6 +82,8 @@ namespace DiscordBot
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
                 services.GetRequiredService<Arma3ServerRestartsService>().Initialize();
                 services.GetRequiredService<Arma3PlayersOnlineService>().Initialize();
+                services.GetRequiredService<InactivityTrackingService>();
+                _musicService = services.GetRequiredService<MusicService>();
                 WebSocketClient.Initialize();
 
                 var botStatusTimer = Observable.Timer(TimeSpan.Zero, TimeSpan.FromSeconds(Configuration.BotStatusUpdateInterval)).Timestamp();
@@ -92,6 +104,8 @@ namespace DiscordBot
             var slashCommands = new SlashCommands(Client);
             await Task.Run(() => slashCommands.RegisterCommands() );
             Client.SlashCommandExecuted += slashCommands.SlashCommandHandler;
+            Client.ButtonExecuted += _musicService.ButtonsHandler;
+            await AudioService.InitializeAsync();
         }
 
         private Task LogAsync(LogMessage log)
@@ -111,6 +125,32 @@ namespace DiscordBot
                 .AddSingleton<ServerStatusService>()
                 .AddSingleton<Arma3ServerRestartsService>()
                 .AddSingleton<Arma3PlayersOnlineService>()
+                .AddSingleton<YoutubeSearchService>()
+                .AddSingleton<MusicService>()
+
+                // Lavalink
+                .AddSingleton<IAudioService, LavalinkCluster>()
+                .AddSingleton<IDiscordClientWrapper, DiscordClientWrapper>()
+                .AddSingleton(new LavalinkClusterOptions {
+                    Nodes = MusicService.Config.LavalinkNodes.Select(node => new LavalinkNodeOptions()
+                    {
+                        RestUri = node.RestUri,
+                        WebSocketUri = node.WebSocketUri,
+                        Password = node.Password
+                    }).ToArray(),
+                    StayOnline = true
+                })
+                
+                .AddSingleton(new InactivityTrackingOptions{
+                    DisconnectDelay = TimeSpan.FromMinutes(MusicService.Config.DisconnectDelay),
+                    PollInterval = TimeSpan.FromSeconds(10),
+                    TrackInactivity = true
+                })
+                .AddSingleton<InactivityTrackingService>()
+                .AddSingleton<ArtworkService>()
+                
+                // Request Caching for Lavalink
+                .AddSingleton<ILavalinkCache, LavalinkCache>()
                 .BuildServiceProvider();
         }
     }

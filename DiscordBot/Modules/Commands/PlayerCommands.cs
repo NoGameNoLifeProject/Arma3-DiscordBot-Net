@@ -4,9 +4,7 @@ using Discord.WebSocket;
 using DiscordBot.Common;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using DiscordBot.Common.Enums;
 

@@ -1,16 +1,14 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using DiscordBot.Common;
-using DiscordBot.Configs;
 using DiscordBot.Modules.Commands;
 using Serilog;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
+using DiscordBot.Common.Enums;
+using DiscordBot.Services;
+using Utils = DiscordBot.Common.Utils;
 
 namespace DiscordBot.Modules
 {
@@ -571,6 +569,59 @@ namespace DiscordBot.Modules
                 var steamID = objects.ElementAtOrDefault(0);
                 var res = await PlayerCommands.UnBan(Context.User as SocketGuildUser, steamID: steamID);
                 await ReplyAsync(embed: res);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Information("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("{User} {Error}", Context.User, ex.Message);
+                await ReplyAsync(ex.Message);
+            }
+        }
+        
+        [Command("setupmusic")]
+        [Summary("Создать/Назначить канал для обработки музыкальных команд")]
+        [RequireContext(ContextType.Guild)]
+        public async Task SetupMusic(IGuildChannel channel = null)
+        {
+            try
+            {
+                Log.Information("{User} использовал комманду SetupMusic", Context.User);
+                await Modules.Commands.Utils.CheckPermissions(Context.User as SocketGuildUser, PermissionsEnumCommands.Zeus);
+                if (channel is null)
+                {
+                    var channelId = MusicService.Config.MusicChannelId;
+                    if (channelId is null || channelId != 0)
+                    {
+                        channel = Context.Guild.TextChannels.FirstOrDefault(ch => ch.Id == channelId);
+                        if (channel is not null)
+                        {
+                            await ReplyAsync($"Канал уже настроен");
+                            return;
+                        }
+                        
+                        channel = await Context.Guild.CreateTextChannelAsync($"music {Context.Client.CurrentUser.Username}");
+                        await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Deny));
+                    }
+                }
+                Utils.AddOrUpdateAppSetting("MusicConfig", "MusicChannelId", channel?.Id);
+                MusicService.Config.MusicChannelId = channel?.Id;
+                
+                var embed = new EmbedBuilder()
+                    .WithTitle($"Сейчас музыка не играет")
+                    .AddField("Поддерживаемые сервисы:", "Youtube, Soundcloud, Bandcamp, Twitch, Vimeo, Audio files links")
+                    .WithColor(new Color(47, 49, 54));
+
+                var mchannel = channel as IMessageChannel;
+                var infoMessage = await mchannel.SendMessageAsync(embed: embed.Build());
+
+                Utils.AddOrUpdateAppSetting("MusicConfig", "MusicInfoMessageId", infoMessage?.Id);
+                MusicService.Config.MusicInfoMessageId = infoMessage?.Id;
+                
+                await ReplyAsync($"Канал настроен <#{channel?.Id}>");
             }
             catch (UnauthorizedAccessException ex)
             {

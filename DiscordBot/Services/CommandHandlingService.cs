@@ -15,6 +15,7 @@ namespace DiscordBot.Services
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
         private readonly IServiceProvider _services;
+        private readonly MusicService _music;
         private Config _config;
         private Config Config => _config ??= Program.Configuration;
 
@@ -22,6 +23,7 @@ namespace DiscordBot.Services
         {
             _commands = services.GetRequiredService<CommandService>();
             _discord = services.GetRequiredService<DiscordSocketClient>();
+            _music = services.GetRequiredService<MusicService>();
             _services = services;
 
             _commands.CommandExecuted += CommandExecutedAsync;
@@ -38,6 +40,13 @@ namespace DiscordBot.Services
             // Ignore system messages, or messages from other bots
             if (!(rawMessage is SocketUserMessage message)) return;
             if (message.Source != MessageSource.User) return;
+
+            if (rawMessage.Channel.Id == MusicService.Config.MusicChannelId)
+            {
+                var msContext = new SocketCommandContext(_discord, message);
+                await _music.HandleUserMessage(msContext);
+                return;
+            }
 
             var argPos = 0;
             if (!message.HasStringPrefix(Config.CommandsPrefix, ref argPos)) return;

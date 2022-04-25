@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using DiscordBot.Configs;
 using Microsoft.Extensions.Configuration;
@@ -9,7 +8,6 @@ using Dapper;
 using Discord;
 using DiscordBot.Common.Entities;
 using MySqlConnector;
-using Dasync.Collections;
 
 namespace DiscordBot.Common
 {

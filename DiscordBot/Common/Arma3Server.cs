@@ -1,5 +1,4 @@
 ﻿using DiscordBot.Configs;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
@@ -7,14 +6,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using System.Management;
 using Serilog;
 using DiscordBot.Common.SteamBridge;
 using System.Threading.Tasks;
 using Discord;
 using System.Text;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json.Linq;
 
 namespace DiscordBot.Common
 {

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using Discord;
 using DiscordBot.Common.Enums;
 
 namespace DiscordBot.Common.Entities;

@@ -1,18 +1,9 @@
-﻿using Discord.Net;
-using Discord;
-using Newtonsoft.Json;
+﻿using Discord;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-using DiscordBot.Modules;
-using DiscordBot.Common;
-using System.IO;
-using Discord.Commands;
-using DiscordBot.Configs;
-using DiscordBot;
 using DiscordBot.Modules.Commands;
 using Serilog;
 
@@ -73,7 +64,7 @@ namespace DiscordBot.Modules
                     .WithName("setms")
                     .WithDescription("Изменить миссию")
                     .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption("name", ApplicationCommandOptionType.String, "Название миссии", required: true)
+                    .AddOption("name", ApplicationCommandOptionType.String, "Название миссии", isRequired: true)
                 ).AddOption(new SlashCommandOptionBuilder()
                     .WithName("installsteam")
                     .WithDescription("Установить SteamCMD если не установлен")
@@ -90,19 +81,19 @@ namespace DiscordBot.Modules
                     .WithName("steamlogin")
                     .WithDescription("Авторизация в steam. После авторизации будет сохранен только логин для дальнешей авторизации из кэша")
                     .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption("login", ApplicationCommandOptionType.String, "Логин", required: true)
-                    .AddOption("password", ApplicationCommandOptionType.String, "Пароль", required: true)
-                    .AddOption("steamguard", ApplicationCommandOptionType.String, "Steam Guard", required: false)
+                    .AddOption("login", ApplicationCommandOptionType.String, "Логин", isRequired: true)
+                    .AddOption("password", ApplicationCommandOptionType.String, "Пароль", isRequired: true)
+                    .AddOption("steamguard", ApplicationCommandOptionType.String, "Steam Guard", isRequired: false)
                 ).AddOption(new SlashCommandOptionBuilder()
                     .WithName("addmod")
                     .WithDescription("Добавить один мод в пресет")
                     .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption("modid", ApplicationCommandOptionType.String, "Id мода", required: true)
+                    .AddOption("modid", ApplicationCommandOptionType.String, "Id мода", isRequired: true)
                 ).AddOption(new SlashCommandOptionBuilder()
                     .WithName("deletemod")
                     .WithDescription("Удалить один мод из пресета")
                     .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption("modid", ApplicationCommandOptionType.String, "Id мода", required: true)
+                    .AddOption("modid", ApplicationCommandOptionType.String, "Id мода", isRequired: true)
                 ).AddOption(new SlashCommandOptionBuilder()
                     .WithName("deleteunusedmods")
                     .WithDescription("Удалить неиспользуемые моды")
@@ -129,8 +120,8 @@ namespace DiscordBot.Modules
                         .WithName("give")
                         .WithDescription("Выдать Zeus по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
-                        .AddOption("user", ApplicationCommandOptionType.User, "Discord игрока", required: true)
+                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", isRequired: true)
+                        .AddOption("user", ApplicationCommandOptionType.User, "Discord игрока", isRequired: true)
                         .AddOption(new SlashCommandOptionBuilder()
                             .WithName("temp")
                             .WithDescription("Выдать временно")
@@ -142,7 +133,7 @@ namespace DiscordBot.Modules
                         .WithName("remove")
                         .WithDescription("Забрать Zeus по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
+                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", isRequired: true)
                     ).AddOption(new SlashCommandOptionBuilder()
                         .WithName("list")
                         .WithDescription("Список владельцев Zeus")
@@ -156,9 +147,9 @@ namespace DiscordBot.Modules
                         .WithName("give")
                         .WithDescription("Выдать intiSTAR по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
-                        .AddOption("user", ApplicationCommandOptionType.User, "Discord игрока", required: true)
-                        .AddOption("rank", ApplicationCommandOptionType.String, "Уровень infiSTAR", required: false)
+                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", isRequired: true)
+                        .AddOption("user", ApplicationCommandOptionType.User, "Discord игрока", isRequired: true)
+                        .AddOption("rank", ApplicationCommandOptionType.String, "Уровень infiSTAR", isRequired: false)
                         .AddOption(new SlashCommandOptionBuilder()
                             .WithName("temp")
                             .WithDescription("Выдать временно")
@@ -170,7 +161,7 @@ namespace DiscordBot.Modules
                         .WithName("remove")
                         .WithDescription("Забрать intiSTAR по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
+                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", isRequired: true)
                     ).AddOption(new SlashCommandOptionBuilder()
                         .WithName("list")
                         .WithDescription("Список владельцев infiSTAR")
@@ -184,16 +175,16 @@ namespace DiscordBot.Modules
                         .WithName("by-steamid")
                         .WithDescription("Забанить игрока по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
-                        .AddOption("bantime", ApplicationCommandOptionType.String, "Время бана (0 = перманентный)", required: false)
-                        .AddOption("reason", ApplicationCommandOptionType.String, "Причина бана", required: false)
+                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", isRequired: true)
+                        .AddOption("bantime", ApplicationCommandOptionType.String, "Время бана (0 = перманентный)", isRequired: false)
+                        .AddOption("reason", ApplicationCommandOptionType.String, "Причина бана", isRequired: false)
                     ).AddOption(new SlashCommandOptionBuilder()
                         .WithName("by-profilename")
                         .WithDescription("Забанить игрока по имени")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("name", ApplicationCommandOptionType.String, "Имя игрока", required: true)
-                        .AddOption("bantime", ApplicationCommandOptionType.String, "Время бана (0 = перманентный)", required: false)
-                        .AddOption("reason", ApplicationCommandOptionType.String, "Причина бана", required: false)
+                        .AddOption("name", ApplicationCommandOptionType.String, "Имя игрока", isRequired: true)
+                        .AddOption("bantime", ApplicationCommandOptionType.String, "Время бана (0 = перманентный)", isRequired: false)
+                        .AddOption("reason", ApplicationCommandOptionType.String, "Причина бана", isRequired: false)
                     )
                 ).AddOption(new SlashCommandOptionBuilder()
                     .WithName("kick")
@@ -203,14 +194,14 @@ namespace DiscordBot.Modules
                         .WithName("by-steamid")
                         .WithDescription("Кикнуть игрока по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
-                        .AddOption("reason", ApplicationCommandOptionType.String, "Причина кика", required: false)
+                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", isRequired: true)
+                        .AddOption("reason", ApplicationCommandOptionType.String, "Причина кика", isRequired: false)
                     ).AddOption(new SlashCommandOptionBuilder()
                         .WithName("by-profilename")
                         .WithDescription("Кикнуть игрока по имени")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("name", ApplicationCommandOptionType.String, "Имя игрока", required: true)
-                        .AddOption("reason", ApplicationCommandOptionType.String, "Причина кика", required: false)
+                        .AddOption("name", ApplicationCommandOptionType.String, "Имя игрока", isRequired: true)
+                        .AddOption("reason", ApplicationCommandOptionType.String, "Причина кика", isRequired: false)
                     )
                 ).AddOption(new SlashCommandOptionBuilder()
                     .WithName("unban")
@@ -220,12 +211,12 @@ namespace DiscordBot.Modules
                         .WithName("by-steamid")
                         .WithDescription("Разбанить игрока по SteamID")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", required: true)
+                        .AddOption("steamid", ApplicationCommandOptionType.String, "SteamID игрока", isRequired: true)
                     ).AddOption(new SlashCommandOptionBuilder()
                         .WithName("by-profilename")
                         .WithDescription("Разбанить игрока по имени")
                         .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption("name", ApplicationCommandOptionType.String, "Имя игрока", required: true)
+                        .AddOption("name", ApplicationCommandOptionType.String, "Имя игрока", isRequired: true)
                     )
                 );
 
