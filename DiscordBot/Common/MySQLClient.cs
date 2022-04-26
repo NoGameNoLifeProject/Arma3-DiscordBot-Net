@@ -110,7 +110,7 @@ namespace DiscordBot.Common
                     if (steamId != 0)
                     {
                         await connection.QueryAsync(
-                            $"Insert into Players_Online (SteamID, Date, Time) Values({steamId}, CURDATE(), {player.Duration}) on duplicate key update Time = Time + {Arma3Server.Config.A3PlayersOnlineUpdateInterval}");
+                            $"Insert into Players_Online (SteamID, Date, Time) Values({steamId}, CURDATE(), {(int)player.Duration}) on duplicate key update Time = Time + {Arma3Server.Config.A3PlayersOnlineUpdateInterval}");
                     }
                 }
 

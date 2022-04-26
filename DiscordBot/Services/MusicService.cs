@@ -418,25 +418,36 @@ public class MusicService
         {
             while (true)
             {
-                var (remaining, resetAfter) = await UpdateInfoMessage();
-                if (remaining <= 1)
+                try
                 {
-                    await Task.Delay((int)(resetAfter*1000), UpdateCancellationToken.Token);
-                }
-                await Task.Delay(Config.InfoMessageUpdateInterval*1000, UpdateCancellationToken.Token);
-                if (SelectionMessage is not null && SelectionMessageDete < DateTimeOffset.Now.AddMinutes(-1))
-                {
-                    await SelectionMessage.DeleteAsync();
-                    SelectionMessage = null;
-                }
+                    var (remaining, resetAfter) = await UpdateInfoMessage();
+                    if (remaining <= 1)
+                    {
+                        if (UpdateCancellationToken.Token.IsCancellationRequested)
+                            break;
+                        Log.Information("Discord limit reached {Remaining} {ResetAfter}", remaining, resetAfter);
+                        await Task.Delay((int)(resetAfter * 1000), UpdateCancellationToken.Token);
+                    }
 
-                if (UpdateCancellationToken.Token.IsCancellationRequested)
-                    break;
-                
-                if (_audioService.HasPlayer(Context.Guild.Id)) continue;
-                UpdateCancellationToken.Cancel();
-                Log.Information("{Prefix} Обновления информационного сообщения остановлены", _logPrefix);
-                await Task.Delay((int)(resetAfter*1000));
+                    await Task.Delay(Config.InfoMessageUpdateInterval * 1000, UpdateCancellationToken.Token);
+                    if (SelectionMessage is not null && SelectionMessageDete < DateTimeOffset.Now.AddMinutes(-1))
+                    {
+                        await SelectionMessage.DeleteAsync();
+                        SelectionMessage = null;
+                    }
+
+                    if (UpdateCancellationToken.Token.IsCancellationRequested)
+                        break;
+
+                    if (_audioService.HasPlayer(Context.Guild.Id)) continue;
+                    UpdateCancellationToken.Cancel();
+                    Log.Information("{Prefix} Обновления информационного сообщения остановлены", _logPrefix);
+                    await Task.Delay((int)(resetAfter * 1000));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "{Prefix}  Ошибка при обновлении информационного сообщения", _logPrefix);
+                }
             }
         });
 
@@ -450,8 +461,10 @@ public class MusicService
         using var content = new StringContent(json, System.Text.Encoding.UTF8,
             "application/json");
         var result = await _http.PatchAsync(discordAPI, content);
-        var remaining = int.Parse(result.Headers.GetValues("X-RateLimit-Remaining").FirstOrDefault("0"));
-        var resetAfter = double.Parse(result.Headers.GetValues("X-RateLimit-Reset-After").FirstOrDefault("5.0"));
+        var remaining = 0;
+        var resetAfter = 5.0;
+        if (!int.TryParse(result.Headers.GetValues("X-RateLimit-Remaining").FirstOrDefault("0"), out remaining));
+        if (!double.TryParse(result.Headers.GetValues("X-RateLimit-Reset-After").FirstOrDefault("5.0"), out resetAfter));
         return (remaining, resetAfter);
     }
     
