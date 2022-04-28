@@ -352,8 +352,8 @@ namespace DiscordBot.Modules
                         {
                             case "give":
                                 var user = commandSubValuesTest.FirstOrDefault(x => x.Name == "user")?.Value as IGuildUser;
-                                var tempValue = commandSubValuesTest.FirstOrDefault(x => x.Name == "temp")?.Value;
-                                var temp = tempValue != null && (bool)tempValue;
+                                var tempValue = commandSubValuesTest.FirstOrDefault(x => x.Name == "temp")?.Value.ToString();
+                                var temp = tempValue != null && bool.Parse(tempValue);
                                 res = await PlayerCommands.InfistarGive(command.User as SocketGuildUser,
                                     commandSubValues.GetValueOrDefault("steamid"),
                                     user,
