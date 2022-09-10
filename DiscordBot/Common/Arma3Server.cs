@@ -1,17 +1,19 @@
 ﻿using DiscordBot.Configs;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using Serilog;
-using DiscordBot.Common.SteamBridge;
 using System.Threading.Tasks;
-using Discord;
-using System.Text;
-using System.Text.RegularExpressions;
+using Dasync.Collections;
+using DiscordBot.OBS;
+using Serilog;
+using Steamworks;
+using Steamworks.Data;
+using Steamworks.Ugc;
 
 namespace DiscordBot.Common
 {
@@ -25,24 +27,33 @@ namespace DiscordBot.Common
 
         private static string _curProcessOwner { get; set; }
         private static string CurProcessOwner { get => _curProcessOwner ??= Utils.GetProcessOwner(Process.GetCurrentProcess().Id); }
+        
+        public static string Arma3Path { get; set; }
 
-        public static void StartServer()
+        public static event Action<Item, float> OnDownloadProgress;
+        public static event Action<Item> OnDownloadEnd;
+
+        public static async Task StartServer()
         {
             UpdateMission();
             Arma3Process = new Process();
             try
             {
+                var workshopPaths = await GetWorkshopModsPathsList();
+                var customPaths = await GetCustomModsPathsList();
+                var mods = $"{string.Join(";", workshopPaths)};{string.Join(";", customPaths)}";
+
                 Arma3Process.StartInfo.UseShellExecute = true;
-                Arma3Process.StartInfo.FileName = Config.A3serverPath + "arma3server_x64.exe";
+                Arma3Process.StartInfo.FileName = Arma3Path + "\\arma3server_x64.exe";
                 Arma3Process.StartInfo.CreateNoWindow = false;
                 Arma3Process.StartInfo.Arguments = $"" +
-                    $"-profiles={Config.A3ProfilesPath} " +
-                    $"-cfg={Config.A3NetworkConfigName} " +
-                    $"-config={Config.A3ServerConfigName} " +
-                    $"-mod={string.Join(";", GetModsList())} " +
-                    $"-servermod={string.Join(";", GetServerModsList())} " +
-                    $"{Config.A3ServerLaunchParams} " +
-                    $"-port=" + Program.Configuration.ServerGamePort;
+                                                   $"-profiles={Config.A3ProfilesPath} " +
+                                                   $"-cfg={Config.A3NetworkConfigName} " +
+                                                   $"-config={Config.A3ServerConfigName} " +
+                                                   $"-mod={mods} " +
+                                                   $"-servermod={string.Join(";", GetServerModsList())} " +
+                                                   $"{Config.A3ServerLaunchParams} " +
+                                                   $"-port=" + Program.Configuration.ServerGamePort;
                 Log.Information("Starting Arma 3 server {Args}", Arma3Process.StartInfo.Arguments);
                 Arma3Process.Start();
             }
@@ -51,9 +62,37 @@ namespace DiscordBot.Common
                 Log.Error(ex, "Ошибка при запуске сервера");
                 throw new Exception("Ошибка при запуске сервера");
             }
-            
+
             if (Config.UseHClient)
-                StartHeadlessClient();
+                await StartHeadlessClient();
+        }
+        
+        public static async Task StartHeadlessClient()
+        {
+            Arma3HCProcess = new Process();
+            try
+            {
+                var workshopPaths = await GetWorkshopModsPathsList();
+                var customPaths = await GetCustomModsPathsList();
+                var mods = $"{string.Join(";", workshopPaths)};{string.Join(";", customPaths)}";
+                
+                Arma3HCProcess.StartInfo.UseShellExecute = true;
+                Arma3HCProcess.StartInfo.FileName = Arma3Path + "\\arma3server_x64.exe";
+                Arma3HCProcess.StartInfo.CreateNoWindow = false;
+                Arma3HCProcess.StartInfo.Arguments = $"" +
+                                                     $"-profiles={Config.A3ProfilesPath} " +
+                                                     $"-mod={mods} " +
+                                                     $"-servermod={string.Join(";", GetServerModsList())} " +
+                                                     $"{Config.A3HCLaunchParams} " +
+                                                     $"-port=" + Program.Configuration.ServerGamePort;
+                Log.Information("Starting Arma 3 Headless Client {Args}", Arma3HCProcess.StartInfo.Arguments);
+                Arma3HCProcess.Start();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Ошибка при запуске Headless клиента");
+                throw new Exception("Ошибка при запуске Headless клиента");
+            }
         }
 
         public static bool IsServerRunning()
@@ -86,37 +125,157 @@ namespace DiscordBot.Common
             }
         }
 
-        public static void RestartServer()
+        public static async Task RestartServer(Action<string> status = null)
         {
             StopServer();
-            StartServer();
+            status?.Invoke("Сервер остановлен, проверяем обновления");
+            await CheckForUpdates(status);
+            status?.Invoke("Запускаем сервер");
+            await StartServer();
         }
 
-        public static void StartHeadlessClient()
+        public static async Task CheckForUpdates(Action<string> status)
         {
-            Arma3HCProcess = new Process();
-            List<string> tempModsList = new();
-            tempModsList.AddRange(GetModsList());
-            tempModsList.AddRange(GetServerModsList());
-            try
+            status.Invoke("Проверяем моды [Steam]");
+            await ProcessSteamMods(
+                (item, progress) =>
+                {
+                    Log.Information("Обновление мода [{Mod}]: {Progress}%", item.Title, progress * 100);
+                },
+                (item) =>
+                {
+                    status.Invoke($"Мод {item.Title} обновлен");
+                    Log.Information("Мод [{Mod}] обновлен", item.Title);
+                });
+            status.Invoke("Проверяем моды [Custom]");
+            Directory.CreateDirectory($"{Arma3Path}\\{Config.A3CustomModsPath}");
+
+            var progressListener = new ObsProgressListener();
+            progressListener.Status += progressStatus => Log.Information("{Progress}% {AverageSpeed}Мбит/сек",
+                progressStatus.getTransferPercentage(), Math.Round(progressStatus.getAverageSpeed() / 125000, 2));
+            await ObsUtils.ValidateInstalledAddons(progressListener, status);
+            status.Invoke("Проверки завершены");
+        }
+
+        public static async Task ProcessSteamMods(Action<Item, float> onDownloadProgress, Action<Item> onDownloadEnd)
+        {
+            var modsForUpdate = await GetModsForUpdate();
+            await DownloadMods(modsForUpdate, onDownloadProgress, onDownloadEnd);
+        }
+
+        public static async Task DownloadMods(List<Item?> mods, Action<Item, float> onDownloadProgress, Action<Item> onDownloadEnd)
+        {
+            SteamUGC.OnDownloadItemResult += (result) => Log.Information("Результат обновления мода {Result}", result);
+            OnDownloadEnd+= onDownloadEnd;
+            OnDownloadProgress += onDownloadProgress;
+            foreach (var item in mods)
             {
-                Arma3HCProcess.StartInfo.UseShellExecute = true;
-                Arma3HCProcess.StartInfo.FileName = Config.A3serverPath + "arma3server_x64.exe";
-                Arma3HCProcess.StartInfo.CreateNoWindow = false;
-                Arma3HCProcess.StartInfo.Arguments = $"" +
-                    $"-profiles={Config.A3ProfilesPath} " +
-                    $"-mod={string.Join(";", GetModsList())} " +
-                    $"-servermod={string.Join(";", tempModsList)} " +
-                    $"{Config.A3HCLaunchParams} " +
-                    $"-port=" + Program.Configuration.ServerGamePort;
-                Log.Information("Starting Arma 3 Headless Client {Args}", Arma3HCProcess.StartInfo.Arguments);
-                Arma3HCProcess.Start();
+                if (!(item?.IsSubscribed ?? false))
+                {
+                    await item?.Subscribe();
+                }
+                await DownloadModAsync((PublishedFileId)item?.Id, 3);
             }
-            catch (Exception ex)
+        }
+
+        public static async Task<List<Item?>> GetModsForUpdate()
+        {
+            var mods = await MySQLClient.GetWorkshopList();
+            var modsForUpdate = new ConcurrentBag<Item?>();
+            await mods.ParallelForEachAsync(async (mod) =>
             {
-                Log.Error(ex, "Ошибка при запуске Headless клиента");
-                throw new Exception("Ошибка при запуске Headless клиента");
+                var itemInfo = await SteamUGC.QueryFileAsync(mod.ModID) ?? new Item(mod.ModID);
+                bool needUpdate = false;
+                long lastUpdate = 0;
+                if (itemInfo.IsInstalled && File.Exists($"{itemInfo.Directory}\\meta.cpp"))
+                {
+                    using (var reader = File.OpenText($"{itemInfo.Directory}\\meta.cpp"))
+                    {
+                        while (true)
+                        {
+                            var line = reader.ReadLine();
+                            if (line is null) break;
+                            if (line.Contains("timestamp"))
+                            {
+                                long.TryParse(line[12..^1], out lastUpdate);
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                    needUpdate = true;
+
+                if (lastUpdate != 0)
+                {
+                    var lastUpdateDate = DateTime.FromBinary(lastUpdate);
+                    if (Math.Abs((itemInfo.Updated - lastUpdateDate).TotalMinutes) > 5)
+                    {
+                        needUpdate = true;
+                        await UpdateModDate(itemInfo.Updated, itemInfo.Directory);
+                    }
+                }
+
+                if (!itemInfo.IsInstalled || itemInfo.NeedsUpdate || needUpdate)
+                    modsForUpdate.Add(itemInfo);
+
+                if (!itemInfo.IsSubscribed)
+                    await itemInfo.Subscribe();
+            });
+            return modsForUpdate.ToList();
+        }
+
+        private static async Task<bool> DownloadModAsync(PublishedFileId fileId, int secondsUpdateDelay = 5, int secondsCancellationTokenDelay = 240)
+        {
+            var item = new Steamworks.Ugc.Item(fileId);
+            var ct = new CancellationTokenSource(TimeSpan.FromSeconds(secondsCancellationTokenDelay)).Token;
+
+            OnDownloadProgress?.Invoke(item, 0.0f);
+            if (item.Download(true) == false)
+                return item.IsInstalled;
+
+            await Task.Delay(secondsUpdateDelay * 1000);
+
+            while (true)
+            {
+                if (ct.IsCancellationRequested)
+                    break;
+
+                OnDownloadProgress?.Invoke(item, item.DownloadAmount);
+
+                if (!item.IsDownloading && item.IsInstalled)
+                    break;
+
+                await Task.Delay(secondsUpdateDelay * 1000);
             }
+
+            OnDownloadProgress?.Invoke(item, 1.0f);
+            OnDownloadEnd?.Invoke(item);
+
+            return item.IsInstalled;
+        }
+        
+        public static async Task<List<string>> GetWorkshopModsPathsList()
+        {
+            var mods = await MySQLClient.GetWorkshopList();
+            var modsPaths = new ConcurrentBag<string>();
+            await mods.ParallelForEachAsync(async (mod) =>
+            {
+                var itemInfo = await SteamUGC.QueryFileAsync(mod.ModID);
+                modsPaths.Add($"\"{itemInfo?.Directory}\"");
+            });
+            return modsPaths.ToList();
+        }
+
+        public static async Task<List<string>> GetCustomModsPathsList()
+        {
+            var mods = await MySQLClient.GetCustomModsList();
+            var modsPaths = new List<string>();
+            foreach (var mod in mods)
+            {
+                modsPaths.Add($"\"{Arma3Path}\\mods\\{mod.Name}\"");
+            }
+            return modsPaths;
         }
 
         public static void ClearDownloadFolder()
@@ -128,7 +287,7 @@ namespace DiscordBot.Common
                 {
                     try
                     {
-                        File.Move(file, Config.A3serverPath + "\\mpmissions\\" + file);
+                        File.Move(file, Arma3Path + "\\mpmissions\\" + file);
                     }
                     catch (Exception ex)
                     {
@@ -148,7 +307,7 @@ namespace DiscordBot.Common
 
         public static List<string> GetAvailableMissions()
         {
-            var files = Directory.GetFiles($"{Config.A3serverPath}\\mpmissions\\", "*.pbo");
+            var files = Directory.GetFiles($"{Arma3Path}\\mpmissions\\", "*.pbo");
             var list = new List<string>(files);
             return list;
         }
@@ -169,19 +328,19 @@ namespace DiscordBot.Common
         {
             try
             {
-                File.Move(ms, Config.A3serverPath + "\\mpmissions\\" + Path.GetFileName(ms), true);
+                File.Move(ms, Arma3Path + "\\mpmissions\\" + Path.GetFileName(ms), true);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Ошибка при переносе новой миссии");
                 throw new Exception("Ошибка при переносе новой миссии");
             }
-            Log.Information("Загруженная миссия перемещна в по пути {Path}", Config.A3serverPath + "\\mpmissions\\" + Path.GetFileName(ms));
+            Log.Information("Загруженная миссия перемещна в по пути {Path}", Arma3Path + "\\mpmissions\\" + Path.GetFileName(ms));
         }
 
         public static void SetMS(string ms)
         {
-            var path = Config.A3serverPath + "\\" + Config.A3ServerConfigName;
+            var path = Arma3Path + "\\" + Config.A3ServerConfigName;
             List<string> newFile = new List<string>();
             using (StreamReader sr = new StreamReader(path))
             {
@@ -218,333 +377,48 @@ namespace DiscordBot.Common
             var ms = GetNewMission();
             if (ms == null) return;
 
-            Thread.Sleep(5000);
+            Thread.Sleep(5000); // TODO: Вспомнить зачем тут этот костыль
             MoveNewMission(ms);
             SetMS(ms);
         }
 
-        public static async Task InstallSteamCMD(IUserMessage message)
+        private static async Task UpdateModDate(DateTime updated, string modPath)
         {
-            SteamInstance.killAll();
-            SteamInstaller installer = new SteamInstaller(Config.SteamCmdPath);
-            if (!installer.Installed)
-            {
-                Log.Information("[SteamCMD] Начинаем установку...");
-                installer.SteamInstalled = (sender, path) => Log.Information("[SteamCMD] Успешно загружено по пути {Path}", path);
-                installer.SteamInstallationError = (sender, ex) => Log.Information(ex, "[SteamCMD] Ошибка при установке");
-                await installer.installSteam();
-                _ = Task.Run(async () =>
-                  {
-                      try
-                      {
-                          var st = new SteamInstance(new FileInfo(Config.SteamCmdPath + "\\steamcmd.exe"));
-                          st.SteamOutput += (sender, line) => Log.Information("[SteamCMD] {Output}", line);
-                          st.SteamExited += (sender, info) =>
-                          {
-                              var res = info == SteamExitReason.NothingSpecial ? "Успех" : "Ошибка";
-                              Log.Information("[SteamCMD] результат установки: {Status}", res);
-                              message.ModifyAsync(m => m.Content = $"SteamCMD результат установки: {res}");
-                              Log.Information("[SteamCMD] Сеанс завершен");
-                          };
-                          st.Start("+quit");
-                      } catch (Exception ex)
-                      {
-                          Log.Error(ex, "SteamCMD ошибка установки");
-                          await message.ModifyAsync(m => m.Content = "SteamCMD ошибка при установке");
-                      }
-                      SteamInstance.killAll();
-                  });
-            }
-        }
+            if (!File.Exists($"{modPath}\\meta.cpp")) return;
 
-        public static async Task UpdateServer(IUserMessage message)
-        {
-            SteamInstaller installer = new SteamInstaller(Config.SteamCmdPath);
-            if (installer.Installed)
+            List<string> newFile = new List<string>();
+            using (var sr = new StreamReader($"{modPath}\\meta.cpp"))
             {
-                _ = Task.Run(async () =>
+                while (sr.Peek() >= 0)
                 {
-                    var messageContent = message.Content;
-                    var instance = new SteamInstance(new FileInfo(Config.SteamCmdPath + "\\steamcmd.exe"));
-                    instance.LoggedIn += (sender) =>
+                    string line = await sr.ReadLineAsync();
+                    if (line.Contains("timestamp"))
                     {
-                        Log.Information("[SteamCMD] Авторизация прошла успешно, начинаем обновление");
-                        messageContent = "SteamCMD Авторизация прошла успешно, начинаем обновление";
-                        message.ModifyAsync(m => m.Content = messageContent);
-                    };
-                    instance.LoginFailed += (sender, info) =>
-                    {
-                        Log.Information("[SteamCMD] Ошибка при попытке авторизации из кэша");
-                        message.ModifyAsync(m => m.Content = "SteamCMD Ошибка при попытке авторизации из кэша, используйте команду для авторизации");
-                    };
-                    instance.AppUpdateStateChanged += (sender, state) =>
-                    {
-                        Log.Information("[SteamCMD] Обновление сервера: {Percentage} {ReceivedBytes}/{TotalBytes} Статус {State}", state.percentage, state.receivedBytes, state.totalBytes, state.stage);
-                        if (message.Content.Length > 1800)
-                        {
-                            messageContent = $"Обновление сервера: {state.percentage}% {state.receivedBytes}/{state.totalBytes} Статус {state.stage}";
-                            message = message.Channel.SendMessageAsync(messageContent).GetAwaiter().GetResult();
-                        }
-                        else
-                        {
-                            messageContent += $"\nОбновление сервера: {state.percentage}% {state.receivedBytes}/{state.totalBytes} Статус {state.stage}";
-                            message.ModifyAsync(m => m.Content = messageContent).GetAwaiter().GetResult();
-                        }
-                    };
-                    instance.AppUpdated += (sender, state) =>
-                    {
-                        var res = state ? "Успех" : "Ошибка";
-                        Log.Information("[SteamCMD] Результат обновления сервера: {Status}", res);
-                        message.ModifyAsync(m => m.Content = $"SteamCMD результат обновления сервера: {res}");
-                    };
-                    instance.SteamExited += (sender, steamExit) => Log.Information("[SteamCMD] Сеанс завершен");
-                    instance.Start($"+force_install_dir {Config.A3serverPath} " +
-                                   $"+login {Config.SteamUserLogin} " +
-                                   $"+app_update {Config.A3ServerId} -validate " +
-                                   $"+quit"
-                        );
-                });
-            }
-            else
-            {
-                Log.Information("Ошибка: SteamCMD не установлен");
-                await message.ModifyAsync(m => m.Content = "Ошибка: SteamCMD не установлен");
-            }
-        }
-
-        public static async Task UpdateServerMods(IUserMessage message)
-        {
-            SteamInstaller installer = new SteamInstaller(Config.SteamCmdPath);
-            if (installer.Installed)
-            {
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        var downloadedMods = new List<long>();
-                        var stringBuilder = new StringBuilder();
-                        var messageContent = message.Content;
-                        stringBuilder.AppendLine($"force_install_dir {Config.A3serverPath}\n");
-                        stringBuilder.AppendLine($"login {Config.SteamUserLogin}\n");
-                        foreach (var modId in Config.Mods)
-                        {
-                            stringBuilder.AppendLine($"workshop_download_item {Config.A3ClientId} {modId} validate\n");
-                        }
-                        stringBuilder.AppendLine($"quit\n");
-                        File.WriteAllText("SteamCMDTempScript.txt", stringBuilder.ToString());
-                        Log.Information("[SteamCMD] Скрипт обновления готов, запускаем");
-
-                        var instance = new SteamInstance(new FileInfo(Config.SteamCmdPath + "\\steamcmd.exe"));
-                        instance.LoggedIn += (sender) =>
-                        {
-                            Log.Information("[SteamCMD] Авторизация прошла успешно, начинаем обновление");
-                            messageContent = "SteamCMD Авторизация прошла успешно, начинаем обновление";
-                            message.ModifyAsync(m => m.Content = messageContent);
-                        };
-                        instance.LoginFailed += (sender, info) =>
-                        {
-                            Log.Information("[SteamCMD] Ошибка при попытке авторизации из кэша");
-                            message.ModifyAsync(m => m.Content = "SteamCMD Ошибка при попытке авторизации из кэша, используйте команду для авторизации");
-                        };
-                        instance.ModDownloaded += (sender, line) =>
-                        {
-                            try
-                            {
-                                if (string.IsNullOrEmpty(line))
-                                    return;
-                                var modId = new DirectoryInfo(line).Name;
-                                var modIdLong = long.Parse(modId);
-                                var modName = GetModNameById(modIdLong);
-                                downloadedMods.Add(modIdLong);
-                                Log.Information("[SteamCMD] Mod {Name} Downloaded {Output}", modName, line);
-                                if (message.Content.Length > 1800) {
-                                    messageContent = $"Мод {modName}|{modId} успешно загружен";
-                                    message = message.Channel.SendMessageAsync(messageContent).GetAwaiter().GetResult();
-                                }
-                                else {
-                                    messageContent += $"\nМод {modName}|{modId} успешно загружен";
-                                    message.ModifyAsync(m => m.Content = messageContent).GetAwaiter().GetResult();
-                                }
-                            } catch (Exception ex)
-                            {
-                                Log.Error(ex, "Ошибка при обновлении модов");
-                            }
-                        };
-                        instance.SteamExited += (sender, steamExit) =>
-                        {
-                            var error = downloadedMods.Except(Config.Mods);
-                            if (error.Any())
-                            {
-                                foreach (var mod in error)
-                                {
-                                    Log.Error("Ошибка при загрузке мода {ModId}", mod);
-                                    if (message.Content.Length > 1800)
-                                        message = message.Channel.SendMessageAsync($"Ошибка при загрузке мода {mod}").GetAwaiter().GetResult();
-                                    else
-                                        message.ModifyAsync(m => m.Content += $"\nОшибка при загрузке мода {mod}");
-                                }
-                            }
-                            Log.Information("[SteamCMD] Сеанс завершен");
-                            messageContent += $"\nОбновление завершено";
-                            message.ModifyAsync(m => m.Content = messageContent);
-                        };
-                        instance.Start($"+runscript {Path.Combine(Directory.GetCurrentDirectory(), "SteamCMDTempScript.txt")}");
-                    } catch (Exception ex){
-                        Log.Error(ex, "Ошибка при обновлении модов");
+                        line = $"timestamp = {updated.ToBinary()};";
                     }
-                });
+                    newFile.Add(line);
+                }
             }
-            else
+
+            using (var sw = new StreamWriter($"{modPath}\\meta.cpp"))
             {
-                Log.Information("Ошибка: SteamCMD не установлен");
-                await message.ModifyAsync(m => m.Content = "Ошибка: SteamCMD не установлен");
-            }
-        }
-
-        public static async Task SteamLogin(IUserMessage message, string login, string password, string steamGuard)
-        {
-            SteamInstaller installer = new SteamInstaller(Config.SteamCmdPath);
-            if (installer.Installed)
-            {
-                _ = Task.Run(async () =>
-                {
-                    var instance = new SteamInstance(new FileInfo(Config.SteamCmdPath + "\\steamcmd.exe"));
-                    instance.LoggedIn += (sender) =>
-                    {
-                        Log.Information("[SteamCMD] Авторизация прошла успешно");
-                        message.ModifyAsync(m => m.Content = "SteamCMD Авторизация прошла успешно");
-                        Utils.AddOrUpdateAppSetting("Arma3Config", "SteamUserLogin", login);
-                        _config = BuildConfig();
-                    };
-                    instance.LoginFailed += (sender, info) =>
-                    {
-                        Log.Information("[SteamCMD] Ошибка при попытке авторизации {LoginResult}", info);
-                        message.ModifyAsync(m => m.Content = $"SteamCMD Ошибка при попытке авторизации {info}");
-                    };
-                    instance.SteamExited += (sender, steamExit) => Log.Information("[SteamCMD] Сеанс завершен");
-                    instance.Start($"+login {login} {password} {steamGuard} " +
-                        $"+quit"
-                        );
-                });
-            }
-            else
-            {
-                Log.Information("Ошибка: SteamCMD не установлен");
-                await message.ModifyAsync(m => m.Content = "Ошибка: SteamCMD не установлен");
-            }
-        }
-
-        public static void DeleteMods(List<long> modIds)
-        {
-            var list = Config.Mods;
-            foreach (var modId in modIds)
-                list.Remove(modId);
-            Utils.AddOrUpdateAppSetting("Arma3Config", "Mods", list);
-        }
-
-        public static void DeleteMods(long modId) => DeleteMods(new List<long> { modId });
-
-        public static void AddMods(List<long> modIds)
-        {
-            var list = Config.Mods;
-            list.AddRange(modIds);
-            Utils.AddOrUpdateAppSetting("Arma3Config", "Mods", list);
-            _config = BuildConfig();
-        }
-
-        public static void AddMods(long modId) => AddMods(new List<long> { modId });
-
-        public static void UpdatePreset(IUserMessage message, string presetContent)
-        {
-            var list = new List<long>();
-            var name = Regex.Matches(presetContent, @"\?id=([^<>]*)<").ToList();
-            Log.Information("Список модов:");
-            foreach (var item in name)
-            {
-                Log.Information("{Mod}", item.Groups[1].Value);
-                list.Add(long.Parse(item.Groups[1].Value));
-            }
-            Utils.AddOrUpdateAppSetting("Arma3Config", "Mods", list);
-            _config = BuildConfig();
-        }
-
-        public static async Task DeleteUnusedMods(IUserMessage message)
-        {
-            var unused = Directory.GetDirectories(Config.SteamContentPath).Select(x => long.Parse(new DirectoryInfo(x).Name)).Except(Config.Mods);
-            var messageContent = message.Content;
-            string success = "Успех";
-            foreach (var item in unused)
-            {
-                var name = GetModNameById(item);
-                success = "Успех";
                 try
                 {
-                    Directory.Delete($"{Config.SteamContentPath}{item}", true);
-                } catch (Exception ex)
-                {
-                    Log.Error(ex, $"Ошибка при удалении мода {name} | {item}");
-                    success = "Ошибка";
+                    foreach (var line in newFile)
+                    {
+                        await sw.WriteLineAsync(line);
+                    }
                 }
-                Log.Information("Удаление мода {Name} | {ModId} : {State}", name, item, success);
-                if (message.Content.Length > 1800)
+                catch (Exception ex)
                 {
-                    messageContent = $"Удаление мода {name} | {item} : {success}";
-                    message = await message.Channel.SendMessageAsync(messageContent);
-                }
-                else
-                {
-                    messageContent += $"\nУдаление мода {name} | {item} : {success}";
-                    await  message.ModifyAsync(m => m.Content = messageContent);
+                    Log.Warning(ex, "Ошибка при попытке изменить дату обновления мода {ModPath}", modPath);
                 }
             }
-            messageContent += $"\nУдаление завершено";
-            await message.ModifyAsync(m => m.Content = messageContent);
-        }
-
-        public static Dictionary<long, string> GetModsListWithNames()
-        {
-            var modsWithName = new Dictionary<long,string>();
-            foreach (var mod in Config.Mods)
-            {
-                var name = "Не установлен";
-                if (Directory.Exists($"{Config.SteamContentPath}{mod}"))
-                {
-                    name = GetModNameById(mod);
-                }
-                modsWithName[mod] = name;
-            }
-            return modsWithName;
-        }
-
-        private static List<string> GetModsList()
-        {
-            var dirs = Directory.GetDirectories(Config.SteamContentPath).ToList();
-            var validDirs = new List<string>();
-            foreach (var dir in dirs)
-            {
-                if (Config.Mods.Contains(long.Parse(new DirectoryInfo(dir).Name)))
-                    validDirs.Add(dir);
-            }
-            return validDirs;
         }
 
         private static List<string> GetServerModsList()
         {
-            return Directory.GetDirectories(Config.A3serverPath + Config.A3ServerModsPath).ToList();
-        }
-
-        public static string GetModNameById(long modId)
-        {
-            var metaFile = File.ReadAllLines($"{Config.SteamContentPath}{modId}\\meta.cpp");
-            foreach (var item in metaFile)
-            {
-                if (item.Contains("name"))
-                {
-                    var name = Regex.Match(item, @"""(.*?)""").Groups[1];
-                    return name.Value;
-                }
-            }
-            return "";
+            return Directory.GetDirectories(Arma3Path + "\\" + Config.A3ServerModsPath).Select(mod => $"\"{mod}\"").ToList();
         }
 
         private static Arma3Config BuildConfig()

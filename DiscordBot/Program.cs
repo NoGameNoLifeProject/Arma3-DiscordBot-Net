@@ -10,6 +10,7 @@ using Discord.Commands;
 using DiscordBot.Services;
 using DiscordBot.Configs;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using DiscordBot.Common;
 using Microsoft.Extensions.Configuration;
 using DiscordBot.Modules;
@@ -20,6 +21,7 @@ using Lavalink4NET.DiscordNet;
 using Lavalink4NET.MemoryCache;
 using Lavalink4NET.Tracking;
 using Serilog;
+using Steamworks;
 
 namespace DiscordBot
 {
@@ -30,6 +32,34 @@ namespace DiscordBot
         public static IAudioService AudioService { get; private set; }
 
         private static MusicService _musicService;
+        
+        #region Trap application termination
+        [DllImport("Kernel32")]
+        private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
+
+        private static EventHandler _handler;
+        
+        private delegate bool EventHandler(CtrlType sig);
+        
+        private static bool Handler(CtrlType sig) {
+            Log.Information("Exiting system due to external CTRL-C, or process kill, or shutdown: {CtrlType}", sig);
+
+            SteamClient.Shutdown();
+
+            Environment.Exit(-1);
+
+            return true;
+        }
+        
+        private enum CtrlType {
+            CTRL_C_EVENT = 0,
+            CTRL_BREAK_EVENT = 1,
+            CTRL_CLOSE_EVENT = 2,
+            CTRL_LOGOFF_EVENT = 5,
+            CTRL_SHUTDOWN_EVENT = 6
+        }
+        #endregion
+        
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -67,6 +97,12 @@ namespace DiscordBot
             {
                 GatewayIntents = GatewayIntents.GuildMembers | GatewayIntents.GuildMessages | GatewayIntents.GuildMessageTyping | GatewayIntents.Guilds | GatewayIntents.GuildVoiceStates
             };
+            
+            _handler += Handler;
+            SetConsoleCtrlHandler(_handler, true);
+
+            SteamClient.Init(Arma3Server.Config.A3ClientId);
+            Arma3Server.Arma3Path = SteamApps.AppInstallDir(Arma3Server.Config.A3ServerId);
 
             using (var services = ConfigureServices(botConfig))
             {

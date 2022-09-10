@@ -66,41 +66,8 @@ namespace DiscordBot.Modules
                     .WithType(ApplicationCommandOptionType.SubCommand)
                     .AddOption("name", ApplicationCommandOptionType.String, "Название миссии", isRequired: true)
                 ).AddOption(new SlashCommandOptionBuilder()
-                    .WithName("installsteam")
-                    .WithDescription("Установить SteamCMD если не установлен")
-                    .WithType(ApplicationCommandOptionType.SubCommand)
-                ).AddOption(new SlashCommandOptionBuilder()
-                    .WithName("update")
-                    .WithDescription("Проверить сервер на наличие обновлений и обновить если требуется")
-                    .WithType(ApplicationCommandOptionType.SubCommand)
-                ).AddOption(new SlashCommandOptionBuilder()
                     .WithName("updatemods")
-                    .WithDescription("Актуализация модов по пресету, проверка модов на наличие обновлений и обновлени если требуется")
-                    .WithType(ApplicationCommandOptionType.SubCommand)
-                ).AddOption(new SlashCommandOptionBuilder()
-                    .WithName("steamlogin")
-                    .WithDescription("Авторизация в steam. После авторизации будет сохранен только логин для дальнешей авторизации из кэша")
-                    .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption("login", ApplicationCommandOptionType.String, "Логин", isRequired: true)
-                    .AddOption("password", ApplicationCommandOptionType.String, "Пароль", isRequired: true)
-                    .AddOption("steamguard", ApplicationCommandOptionType.String, "Steam Guard", isRequired: false)
-                ).AddOption(new SlashCommandOptionBuilder()
-                    .WithName("addmod")
-                    .WithDescription("Добавить один мод в пресет")
-                    .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption("modid", ApplicationCommandOptionType.String, "Id мода", isRequired: true)
-                ).AddOption(new SlashCommandOptionBuilder()
-                    .WithName("deletemod")
-                    .WithDescription("Удалить один мод из пресета")
-                    .WithType(ApplicationCommandOptionType.SubCommand)
-                    .AddOption("modid", ApplicationCommandOptionType.String, "Id мода", isRequired: true)
-                ).AddOption(new SlashCommandOptionBuilder()
-                    .WithName("deleteunusedmods")
-                    .WithDescription("Удалить неиспользуемые моды")
-                    .WithType(ApplicationCommandOptionType.SubCommand)
-                ).AddOption(new SlashCommandOptionBuilder()
-                    .WithName("getmodslist")
-                    .WithDescription("Список модов сервера")
+                    .WithDescription("Проверка обновления модов")
                     .WithType(ApplicationCommandOptionType.SubCommand)
                 );
 
@@ -248,16 +215,16 @@ namespace DiscordBot.Modules
                 switch (commandName)
                 {
                     case "start":
-                        res = await ServerCommands.StartServer(command.User as SocketGuildUser);
-                        await command.RespondAsync(res);
+                        await command.RespondAsync("Запускаем сервер");
+                        Task.Run(async () =>  await ServerCommands.StartServer(command.User as SocketGuildUser, command.Channel));
                         break;
                     case "stop":
                         res = await ServerCommands.StopServer(command.User as SocketGuildUser);
                         await command.RespondAsync(res);
                         break;
                     case "restart":
-                        res = await ServerCommands.RestartServer(command.User as SocketGuildUser);
-                        await command.RespondAsync(res);
+                        await command.RespondAsync("Начинаем перезагрузку сервера");
+                        Task.Run(async () => await ServerCommands.RestartServer(command.User as SocketGuildUser, command.Channel));
                         break;
                     case "mslist":
                         res = await ServerCommands.MsList(command.User as SocketGuildUser);
@@ -267,37 +234,9 @@ namespace DiscordBot.Modules
                         res = await ServerCommands.SetMS(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("name", ""));
                         await command.RespondAsync(res);
                         break;
-                    case "installsteam":
-                        await command.RespondAsync("Запускаем команду");
-                        await ServerCommands.InstallSteamCMD(command.User as SocketGuildUser, command.Channel);
-                        break;
-                    case "update":
-                        await command.RespondAsync("Запускаем команду");
-                        await ServerCommands.UpdateServer(command.User as SocketGuildUser, command.Channel);
-                        break;
                     case "updatemods":
-                        await command.RespondAsync("Запускаем команду");
-                        await ServerCommands.UpdateServerMods(command.User as SocketGuildUser, command.Channel);
-                        break;
-                    case "steamlogin":
-                        await command.RespondAsync("Запускаем команду");
-                        await ServerCommands.SteamLogin(command.User as SocketGuildUser, command.Channel, commandSubValues.GetValueOrDefault("login", ""), commandSubValues.GetValueOrDefault("password", ""), commandSubValues.GetValueOrDefault("steamguard", ""));
-                        break;
-                    case "addmod":
-                        res = await ServerCommands.AddMod(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("modid", ""));
-                        await command.RespondAsync(res);
-                        break;
-                    case "deletemod":
-                        res = await ServerCommands.DeleteMod(command.User as SocketGuildUser, commandSubValues.GetValueOrDefault("modid", ""));
-                        await command.RespondAsync(res);
-                        break;
-                    case "deleteunusedmods":
-                        await command.RespondAsync("Запускаем команду");
-                        await ServerCommands.DeleteUnusedMods(command.User as SocketGuildUser, command.Channel);
-                        break;
-                    case "getmodslist":
-                        res = await ServerCommands.GetModsList(command.User as SocketGuildUser);
-                        await command.RespondAsync(res);
+                        await command.RespondAsync("Начинаем проверку обновлений модов");
+                        Task.Run(async () => await ServerCommands.UpdateServerMods(command.User as SocketGuildUser, command.Channel));
                         break;
                 }
             }

@@ -100,10 +100,13 @@ namespace DiscordBot.Common
         {
             using (var connection = new MySqlConnection(ConnectionString))
             {
-                var data = connection.Query($"select ProfileName, SteamID from Players_Profiles where ProfileName in @Names GROUP BY SteamID", new { Names = players.Select(x => x.Name)}).ToDictionary(
-                    row => (string)row.ProfileName,
-                    row => (long)row.SteamID);
-
+                var rawdata = connection
+                    .Query(
+                        $"select ProfileName, SteamID from Players_Profiles where ProfileName in @Names GROUP BY SteamID",
+                        new { Names = players.Select(x => x.Name) }).GroupBy(p => p.ProfileName);
+                var data = rawdata.ToDictionary(
+                    row => (string)row.Key,
+                    row => (long)row.First().SteamID);
                 foreach (var player in players)
                 {
                     var steamId = data.GetValueOrDefault(player.Name);
@@ -139,6 +142,36 @@ namespace DiscordBot.Common
 
                 return players.ToList();
             }
+        }
+
+        public static async Task<List<LauncherModsWorkshop>> GetWorkshopList()
+        {
+            await using var connection = new MySqlConnection(ConnectionString);
+            var mods = await connection.QueryAsync<LauncherModsWorkshop>("select * from launcher_mods_workshop where IsUsed = 1");
+            return mods.ToList();
+        }
+
+        public static async Task<List<LauncherModsCustom>> GetCustomModsList()
+        {
+            await using var connection = new MySqlConnection(ConnectionString);
+            var mods = await connection.QueryAsync<LauncherModsCustom>("select * from launcher_mods_custom where IsUsed = 1");
+            return mods.ToList();
+        }
+
+        public static async Task<List<LauncherModsCustomFiles>> GetCustomModsFilesList(int modID)
+        {
+            await using var connection = new MySqlConnection(ConnectionString);
+            var mods = await connection.QueryAsync<LauncherModsCustomFiles>("select * from launcher_mods_custom_files where ModID = @ModID", new {ModID = modID});
+            return mods.ToList();
+        }
+        
+        public static async Task<Dictionary<string, bool>> GetCustomModsFilesDictionary(int modID)
+        {
+            await using var connection = new MySqlConnection(ConnectionString);
+            var mods = await connection.QueryAsync("select Name from launcher_mods_custom_files where ModID = @ModID", new { ModID = modID });
+            return mods.ToDictionary(
+                row => (string)row.Name,
+                _ => true);
         }
 
         private static MySQLConfig BuildConfig()

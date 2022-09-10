@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <DebugType>embedded</DebugType>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -33,9 +34,12 @@
     <PackageReference Include="Dapper" Version="2.0.123" />
     <PackageReference Include="Dawn.Guard" Version="1.12.0" />
     <PackageReference Include="Discord.Net" Version="3.5.0" />
+    <PackageReference Include="Facepunch.Steamworks" Version="2.3.3" />
+    <PackageReference Include="Facepunch.Steamworks.Dlls" Version="2.3.2" />
     <PackageReference Include="Google.Apis.Sheets.v4" Version="1.53.0.2371" />
-    <PackageReference Include="Lavalink4NET.Discord.NET" Version="2.1.1" />
-    <PackageReference Include="Lavalink4NET.MemoryCache" Version="2.1.1" />
+    <PackageReference Include="IKVM" Version="8.2.1" />
+    <PackageReference Include="Lavalink4NET.Discord.NET" Version="3.0.0-preview.11" />
+    <PackageReference Include="Lavalink4NET.MemoryCache" Version="3.0.0-preview.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
@@ -54,6 +58,33 @@
     <PackageReference Include="System.Management" Version="6.0.0" />
     <PackageReference Include="System.Reactive" Version="5.0.0" />
     <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
+    <IkvmReference Include="java\jackson-annotations-2.10.0.jar">
+      <AssemblyName>jackson-annotations</AssemblyName>
+      <Aliases>jacksonannotations</Aliases>
+    </IkvmReference>
+    <IkvmReference Include="java\jackson-core-2.10.0.jar">
+      <AssemblyName>jackson-core</AssemblyName>
+      <Aliases>jacksoncore</Aliases>
+    </IkvmReference>
+    <IkvmReference Include="java\jackson-databind-2.10.0.jar">
+      <AssemblyName>jackson-databind</AssemblyName>
+      <Aliases>jacksondatabind</Aliases>
+      <References>java\jackson-core-2.10.0.jar;java\jackson-annotations-2.10.0.jar</References>
+    </IkvmReference>
+    <IkvmReference Include="java\okio-1.17.2.jar">
+      <AssemblyName>okio</AssemblyName>
+      <Aliases>okio</Aliases>
+    </IkvmReference>
+    <IkvmReference Include="java\okhttp-3.14.2.jar">
+      <AssemblyName>okhttp</AssemblyName>
+      <Aliases>okhttp</Aliases>
+      <References>java\okio-1.17.2.jar</References>
+    </IkvmReference>
+    <IkvmReference Include="java\esdk-obs-java-3.20.1.jar">
+      <AssemblyName>obs-java</AssemblyName>
+      <Aliases>obsjava</Aliases>
+      <References>java\okio-1.17.2.jar;java\okhttp-3.14.2.jar;java\jackson-core-2.10.0.jar;java\jackson-annotations-2.10.0.jar;java\jackson-databind-2.10.0.jar</References>
+    </IkvmReference>
   </ItemGroup>
 
   <ItemGroup>
